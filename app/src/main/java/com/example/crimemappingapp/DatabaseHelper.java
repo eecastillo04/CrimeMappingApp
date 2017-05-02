@@ -21,7 +21,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + TABLE_ADMIN + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
                 + COLUMN_USERNAME + " text not null unique, "
-                + COLUMN_PASSWORD + " text not null)");
+                + COLUMN_PASSWORD + " text not null)"),
+        CRIME_TYPE(TABLE_CRIME_TYPE, "create table "
+                + TABLE_CRIME_TYPE + "("
+                + COLUMN_ID + " integer primary key autoincrement, "
+                + COLUMN_CRIME_NAME + " text not null)"),
+        CRIME(TABLE_CRIME, "create table "
+                + TABLE_CRIME + "("
+                + COLUMN_ID + " integer primary key autoincrement, "
+                + COLUMN_LOCATION + " text not null, "
+                + COLUMN_DATE + " text not null, "
+                + COLUMN_CRIME_TYPE_ID + " text, "
+                + " FOREIGN KEY (" + COLUMN_CRIME_TYPE_ID
+                + " REFERENCES " + TABLE_CRIME
+                + "(" + CRIME_TYPE + "))");
 
         private final String tableName;
         private final String createTableSQL;
@@ -45,6 +58,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_ADMIN = "admin";
     public static final String COLUMN_USERNAME = "username";
     public static final String COLUMN_PASSWORD = "password";
+
+    public static final String TABLE_CRIME_TYPE = "crime_type";
+    public static final String COLUMN_CRIME_NAME = "crime_name";
+
+    public static final String TABLE_CRIME = "crime";
+    public static final String COLUMN_CRIME_TYPE_ID = "crime_type_id";
+    public static final String COLUMN_LOCATION = "location";
+    public static final String COLUMN_DATE = "crime_date";
 
     private static final String DATABASE_NAME = "crime_mapping.db";
     private static final int DATABASE_VERSION = 2;
