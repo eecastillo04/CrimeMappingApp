@@ -21,8 +21,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void openCrimeMappingActivityAsUser() {
-        // TODO open screen without admin privileges
+    public void openCrimeMapActivityAsUser(View view) {
+        Intent intent = new Intent(MainActivity.this, CrimeMapActivity.class);
+        startActivity(intent);
     }
 
     private void initializeAdmin() {
