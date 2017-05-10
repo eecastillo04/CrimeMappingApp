@@ -23,6 +23,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void openCrimeMapActivityAsUser(View view) {
         Intent intent = new Intent(MainActivity.this, CrimeMapActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isAdmin", false);
+        intent.putExtras(bundle);
         startActivity(intent);
     }
 

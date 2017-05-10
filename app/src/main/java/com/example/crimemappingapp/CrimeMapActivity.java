@@ -9,7 +9,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -33,10 +35,14 @@ public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCal
     private GoogleMap mMap;
     private boolean isMapReady;
 
+    private boolean isAdmin;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crime_map);
+
+        isAdmin = getIntent().getExtras().getBoolean("isAdmin");
 
         // TEMP CRIME TYPE SPINNER
         Spinner crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
@@ -54,6 +60,9 @@ public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCal
         Spinner toYearSpinner = (Spinner) findViewById(R.id.to_year_spinner);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         toYearSpinner.setAdapter(adapter);
+
+        Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
+        addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
