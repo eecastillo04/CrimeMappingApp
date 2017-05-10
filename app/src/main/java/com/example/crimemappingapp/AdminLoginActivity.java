@@ -1,5 +1,6 @@
 package com.example.crimemappingapp;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +21,11 @@ public class AdminLoginActivity extends AppCompatActivity {
 
         // check if input is valid admin login credentials
         if(DatabaseHelper.getInstance(this).isValidAdminCredentials(username, password)) {
-            // TODO open screen with admin privileges
+            Intent intent = new Intent(AdminLoginActivity.this, CrimeMapActivity.class);
+            Bundle bundle = new Bundle();
+            bundle.putBoolean("isAdmin", true);
+            intent.putExtras(bundle);
+            startActivity(intent);
         }
     }
 }

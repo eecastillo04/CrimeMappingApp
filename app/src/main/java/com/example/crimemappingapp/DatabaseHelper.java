@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -107,7 +108,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(DatabaseHelper.COLUMN_USERNAME, username);
         values.put(DatabaseHelper.COLUMN_PASSWORD, hashPassword);
 
-        getWritableDatabase().insert(DatabaseHelper.TABLE_ADMIN, null, values);
+        try {
+            getWritableDatabase().insert(DatabaseHelper.TABLE_ADMIN, null, values);
+        } catch(SQLiteConstraintException e) {
+            Log.i("Unable to add new admin credentials", e.getMessage());
+        }
         close();
     }
 
