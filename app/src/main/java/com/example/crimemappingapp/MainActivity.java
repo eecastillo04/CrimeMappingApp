@@ -13,7 +13,13 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        initDB();
+    }
+
+    private void initDB() {
+        DatabaseHelper.createInstance(this);
         initializeAdmin();
+        initializeCrimeTypes();
     }
 
     public void openAdminLoginActivity(View view) {
@@ -30,7 +36,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initializeAdmin() {
-        DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
-        dbHelper.insertAdmin("admin", "password");
+        DatabaseHelper.insertAdmin("admin", "password");
+    }
+
+    private void initializeCrimeTypes() {
+        DatabaseHelper.insertCrimeType("Arson");
+        DatabaseHelper.insertCrimeType("Assault");
+        DatabaseHelper.insertCrimeType("Burglary");
+        DatabaseHelper.insertCrimeType("Murder");
     }
 }

@@ -3,11 +3,13 @@ package com.example.crimemappingapp;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Debug;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by klanezurbano on 30/04/2017.
@@ -22,20 +24,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + TABLE_ADMIN + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
                 + COLUMN_USERNAME + " text not null unique, "
-                + COLUMN_PASSWORD + " text not null)"),
+                + COLUMN_PASSWORD + " text not null);"),
         CRIME_TYPE(TABLE_CRIME_TYPE, "create table "
                 + TABLE_CRIME_TYPE + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
-                + COLUMN_CRIME_NAME + " text not null)"),
+                + COLUMN_CRIME_NAME + " text not null);"),
         CRIME(TABLE_CRIME, "create table "
                 + TABLE_CRIME + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
                 + COLUMN_LOCATION + " text not null, "
                 + COLUMN_DATE + " text not null, "
                 + COLUMN_CRIME_TYPE_ID + " text, "
-                + " FOREIGN KEY (" + COLUMN_CRIME_TYPE_ID
-                + " REFERENCES " + TABLE_CRIME
-                + "(" + CRIME_TYPE + "))");
+                + " FOREIGN KEY (" + COLUMN_CRIME_TYPE_ID + ")"
+                + " REFERENCES " + CRIME_TYPE.getTableName()
+                + "(" + COLUMN_ID + "));");
 
         private final String tableName;
         private final String createTableSQL;
@@ -69,7 +71,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DATE = "crime_date";
 
     private static final String DATABASE_NAME = "crime_mapping.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 13;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -77,14 +79,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String createDbSQL = "";
-
         for(DATABASE_TABLE dbTable: DATABASE_TABLE.values()) {
-            createDbSQL += dbTable.getCreateTableSQL() + " ";
+            db.execSQL(dbTable.getCreateTableSQL());
         }
-
-        createDbSQL += ";";
-        db.execSQL(createDbSQL);
     }
 
     @Override
@@ -102,36 +99,111 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public void insertAdmin(String username, String password) {
-        String hashPassword = HashText.sha1(password);
+    public static void insertCrimeType(String crimeName) {
         ContentValues values = new ContentValues();
-        values.put(DatabaseHelper.COLUMN_USERNAME, username);
-        values.put(DatabaseHelper.COLUMN_PASSWORD, hashPassword);
+        values.put(COLUMN_CRIME_NAME, crimeName);
 
-        try {
-            getWritableDatabase().insert(DatabaseHelper.TABLE_ADMIN, null, values);
-        } catch(SQLiteConstraintException e) {
-            Log.i("Unable to add new admin credentials", e.getMessage());
+        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), COLUMN_CRIME_NAME);
+
+        Cursor cursor = getDatabase().rawQuery(selectString, new String[] {crimeName});
+
+        boolean crimeTypeExists = cursor.moveToFirst();
+        if(!crimeTypeExists) {
+            getDatabase(true).insert(DATABASE_TABLE.CRIME_TYPE.getTableName(), null, values);
         }
-        close();
+
+        closeDatabase(cursor);
     }
 
-    public boolean isValidAdminCredentials(String username, String password) {
+    public static void insertAdmin(String username, String password) {
         String hashPassword = HashText.sha1(password);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USERNAME, username);
+        values.put(COLUMN_PASSWORD, hashPassword);
 
-        String selectString = String.format("SELECT * FROM %s WHERE %s =? and %s=?", DATABASE_TABLE.ADMIN.getTableName(), COLUMN_USERNAME, COLUMN_PASSWORD);
+        String selectString = buildSelectStatement(DATABASE_TABLE.ADMIN.getTableName(), COLUMN_USERNAME);
 
-        Cursor cursor = getReadableDatabase().rawQuery(selectString, new String[] {username, hashPassword});
+        Cursor cursor = getDatabase().rawQuery(selectString, new String[] {username});
 
         boolean adminExists = cursor.moveToFirst();
-        cursor.close();
-        close();
+        if(!adminExists) {
+            getDatabase(true).insert(DATABASE_TABLE.ADMIN.getTableName(), null, values);
+        }
+
+        closeDatabase(cursor);
+    }
+
+    public static boolean isValidAdminCredentials(String username, String password) {
+        String hashPassword = HashText.sha1(password);
+
+        String selectString = buildSelectStatement(DATABASE_TABLE.ADMIN.getTableName(), COLUMN_USERNAME, COLUMN_PASSWORD);
+
+        Cursor cursor = getDatabase().rawQuery(selectString, new String[] {username, hashPassword});
+
+        boolean adminExists = cursor.moveToFirst();
+        closeDatabase(cursor);
         return adminExists;
     }
 
-    public static DatabaseHelper getInstance(Context context) {
+    public static List<String> retrieveAllCrimeTypes() {
+        List<String> crimeTypeNames = new ArrayList<>();
+
+        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), null);
+
+        Cursor cursor = getDatabase().rawQuery(selectString, null);
+        if (cursor.moveToFirst()) {
+            crimeTypeNames.add(cursor.getString(1));
+            while(cursor.moveToNext()) {
+                crimeTypeNames.add(cursor.getString(1));
+            }
+        }
+        return crimeTypeNames;
+    }
+
+    private static String buildSelectStatement(String tableName, String ... columnNames) {
+        String selectString = "SELECT * FROM " + tableName;
+
+        if(columnNames != null) {
+            selectString +=  " WHERE";
+            boolean isFirstColumn = true;
+            for(String columnName: columnNames) {
+                if(!isFirstColumn) {
+                    selectString += " and";
+                }
+                isFirstColumn = false;
+                selectString += " " + columnName + " = ?";
+            }
+        }
+
+        return selectString;
+    }
+
+    private static void closeDatabase() {
+        closeDatabase(null);
+    }
+
+    private static void closeDatabase(Cursor cursor) {
+        if(cursor != null) {
+            cursor.close();
+        }
+        INSTANCE.close();
+    }
+
+    /**
+     * @return Returns a readable database
+     */
+    private static SQLiteDatabase getDatabase() {
+        return getDatabase(false);
+    }
+
+    private static SQLiteDatabase getDatabase(boolean isWritable) {
+        return isWritable ? INSTANCE.getWritableDatabase():  INSTANCE.getReadableDatabase();
+    }
+
+    public static DatabaseHelper createInstance(Context context) {
         if(INSTANCE == null) {
             INSTANCE = new DatabaseHelper(context);
+//            getDatabase();
         }
 
         return INSTANCE;

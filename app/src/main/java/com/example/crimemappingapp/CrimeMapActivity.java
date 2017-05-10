@@ -46,8 +46,7 @@ public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCal
 
         // TEMP CRIME TYPE SPINNER
         Spinner crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.planets_array, android.R.layout.simple_spinner_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, DatabaseHelper.retrieveAllCrimeTypes());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
