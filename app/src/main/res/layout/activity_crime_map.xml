@@ -5,36 +5,41 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="com.example.crimemappingapp.CrimeMapActivity">
+    tools:context="com.example.crimemappingapp.activity.CrimeMapActivity">
 
     <LinearLayout
         android:id="@+id/topOfMap"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="300px"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintBottom_creator="1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent">
         <Spinner
             android:id="@+id/crime_type_spinner"
-            android:layout_width="wrap_content"
+            android:layout_width="300px"
             android:layout_height="wrap_content" />
 
-        <Spinner
-            android:id="@+id/from_year_spinner"
+        <Button
+            android:id="@+id/from_date_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            style="?android:attr/spinnerStyle"
+            android:text="From" />
 
-        <Spinner
-            android:id="@+id/to_year_spinner"
+        <Button
+            android:id="@+id/to_date_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            style="?android:attr/spinnerStyle"
+            android:text="To" />
 
         <Button
             android:id="@+id/search_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Search" />
+            android:text="+"
+            style="?android:attr/borderlessButtonStyle" />
     </LinearLayout>
 
     <fragment

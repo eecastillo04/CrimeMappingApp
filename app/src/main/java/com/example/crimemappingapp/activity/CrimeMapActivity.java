@@ -1,19 +1,26 @@
-package com.example.crimemappingapp;
+package com.example.crimemappingapp.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.Spinner;
 
+import com.example.crimemappingapp.R;
+import com.example.crimemappingapp.utils.DatabaseHelper;
+import com.example.crimemappingapp.utils.DateUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -26,7 +33,11 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+import java.util.Calendar;
+
+public class CrimeMapActivity extends AppCompatActivity implements
+        OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -51,14 +62,12 @@ public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCal
         crimeTypeSpinner.setAdapter(adapter);
 
         // TEMP FROM YEAR SPINNER
-        Spinner fromYearSpinner = (Spinner) findViewById(R.id.from_year_spinner);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        fromYearSpinner.setAdapter(adapter);
+        Button fromYearSpinner = (Button) findViewById(R.id.from_date_button);
+        fromYearSpinner.setOnClickListener(createDatePickerOnClickListener());
 
         // TEMP FROM YEAR SPINNER
-        Spinner toYearSpinner = (Spinner) findViewById(R.id.to_year_spinner);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        toYearSpinner.setAdapter(adapter);
+        Button toYearSpinner = (Button) findViewById(R.id.to_date_button);
+        toYearSpinner.setOnClickListener(createDatePickerOnClickListener());
 
         Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
         addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
@@ -157,5 +166,42 @@ public class CrimeMapActivity extends AppCompatActivity implements OnMapReadyCal
         isMapReady = true;
         mMap = googleMap;
         mGoogleApiClient.connect();
+    }
+
+    public View.OnClickListener createDatePickerOnClickListener() {
+        return new View.OnClickListener() {
+            @SuppressLint("ValidFragment")
+            @Override
+            public void onClick(final View v) {
+                DialogFragment datePickerFragment = new DatePickerFragment() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        ((Button) v).setText(DateUtils.buildDateDisplay(year, month, dayOfMonth));
+                    }
+                };
+                datePickerFragment.show(getFragmentManager(), "datePicker");
+            }
+        };
+    }
+
+    @SuppressLint("ValidFragment")
+    public class DatePickerFragment extends DialogFragment implements DatePickerDialog.OnDateSetListener {
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the current date as the default date in the picker
+            final Calendar c = Calendar.getInstance();
+            int year = c.get(Calendar.YEAR);
+            int month = c.get(Calendar.MONTH);
+            int day = c.get(Calendar.DAY_OF_MONTH);
+
+            // Create a new instance of DatePickerDialog and return it
+            return new DatePickerDialog(getActivity(), this, year, month, day);
+        }
+
+        @Override
+        public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+
+        }
     }
 }

@@ -1,19 +1,14 @@
-package com.example.crimemappingapp;
+package com.example.crimemappingapp.utils;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.Debug;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Created by klanezurbano on 30/04/2017.
- */
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -70,8 +65,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_LOCATION = "location";
     public static final String COLUMN_DATE = "crime_date";
 
-    private static final String DATABASE_NAME = "crime_mapping.db";
-    private static final int DATABASE_VERSION = 13;
+    public static final String DATABASE_NAME = "crime_mapping.db";
+    private static final int DATABASE_VERSION = 1;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -148,7 +143,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static List<String> retrieveAllCrimeTypes() {
         List<String> crimeTypeNames = new ArrayList<>();
 
-        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), null);
+        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), new String[]{});
 
         Cursor cursor = getDatabase().rawQuery(selectString, null);
         if (cursor.moveToFirst()) {
@@ -163,7 +158,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static String buildSelectStatement(String tableName, String ... columnNames) {
         String selectString = "SELECT * FROM " + tableName;
 
-        if(columnNames != null) {
+        if(columnNames != null && columnNames.length != 0) {
             selectString +=  " WHERE";
             boolean isFirstColumn = true;
             for(String columnName: columnNames) {
@@ -203,7 +198,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static DatabaseHelper createInstance(Context context) {
         if(INSTANCE == null) {
             INSTANCE = new DatabaseHelper(context);
-//            getDatabase();
         }
 
         return INSTANCE;

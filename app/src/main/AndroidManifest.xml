@@ -34,15 +34,15 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AdminLoginActivity" />
-        <activity android:name=".CrimeMapActivity" />
+        <activity android:name=".activity.AdminLoginActivity" />
+        <activity android:name=".activity.CrimeMapActivity" />
     </application>
 
 </manifest>

@@ -12,6 +12,15 @@
     </item>
     <item
         is-multidex="true"
+        jar="C:\Users\klanezurbano\.android\build-cache\5bd99b557fad824e515264f87b3afac908ad0be2\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="29d9916bd9ad8406a53edbafbbce5e18943aa882">
+        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_8a79749a328a695e133e2883468ccc7d2ba4c038\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
         jar="C:\Users\klanezurbano\.android\build-cache\b8052d9c7dd617c98c2cd23a7663ff6a0a8600d2\output\jars\classes.jar"
         jumboMode="true"
         optimize="true"
@@ -52,7 +61,7 @@
         jumboMode="true"
         optimize="true"
         revision="25.0.2"
-        sha1="a96933849173a65f8e622f8eeca08b8929db7224">
+        sha1="2a5de8fe0c2c64afedc8cd06aef792b2c827ca19">
         <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run-bootstrap_6fd51d6abbb57a84e814b05b61df5b72ac33a0db\classes.dex" />
     </item>
     <item
@@ -72,6 +81,15 @@
         revision="25.0.2"
         sha1="4a26a1154d053ab11aaf4c3967c42a4d66390991">
         <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_4d203fe2049bc07297bb82dddde07c10429bcf02\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\klanezurbano\.android\build-cache\e9eb2aa372106e66e9deb2040ed21ad316479ce1\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="5cba8868595f6aaff54cf7d1798591108cf5611c">
+        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_c499621c548ed49cccd94093ded913ad80a5142c\classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -102,15 +120,6 @@
     </item>
     <item
         is-multidex="true"
-        jar="C:\Users\klanezurbano\AppData\Local\Android\sdk\extras\m2repository\com\android\support\constraint\constraint-layout-solver\1.0.2\constraint-layout-solver-1.0.2.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="25.0.2"
-        sha1="b9cd8fc6bd15cb915735d34535db30ece0c44603">
-        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\constraint-layout-solver-1.0.2_3dbd0c340d25a31a5aa7f424db4d6debe72b9c29\classes.dex" />
-    </item>
-    <item
-        is-multidex="true"
         jar="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
         jumboMode="true"
         optimize="true"
@@ -120,12 +129,12 @@
     </item>
     <item
         is-multidex="true"
-        jar="C:\Users\klanezurbano\.android\build-cache\2c25fdffb499d5408e70805f1095cc15d6363d32\output\jars\classes.jar"
+        jar="C:\Users\klanezurbano\AppData\Local\Android\sdk\extras\m2repository\com\android\support\constraint\constraint-layout-solver\1.0.2\constraint-layout-solver-1.0.2.jar"
         jumboMode="true"
         optimize="true"
         revision="25.0.2"
-        sha1="19696dc358ac668e341f28c41e3387d61ccdb81d">
-        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_56ee65bd5947c9299ac1d71d7236045187c58359\classes.dex" />
+        sha1="b9cd8fc6bd15cb915735d34535db30ece0c44603">
+        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\constraint-layout-solver-1.0.2_3dbd0c340d25a31a5aa7f424db4d6debe72b9c29\classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -138,39 +147,12 @@
     </item>
     <item
         is-multidex="true"
-        jar="C:\Users\klanezurbano\.android\build-cache\0e4b16316207939fd748e7367b0628e300ad3f7b\output\jars\classes.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="25.0.2"
-        sha1="6003d64df88a6ce5e961fa2bad7f1b9b97689ac1">
-        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_a651a9d61d7943fa2e59a290892d89170ab1c20c\classes.dex" />
-    </item>
-    <item
-        is-multidex="true"
         jar="C:\Users\klanezurbano\.android\build-cache\d0cf98f9fb50de7d96c2455a4d5267bdfb920ada\output\jars\classes.jar"
         jumboMode="true"
         optimize="true"
         revision="25.0.2"
         sha1="d4cf6227dd6a2ceff0f7dcf0c324380b7abf2c28">
         <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_7eb8f3226796f72718bc3daab3258c70f3621545\classes.dex" />
-    </item>
-    <item
-        is-multidex="true"
-        jar="C:\Users\klanezurbano\.android\build-cache\3edfd549674de52f414cda2669af3ecfcb404dbc\output\jars\classes.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="25.0.2"
-        sha1="c7626a9aa507bbbdc16188bc9a9f9bf3370c1ddd">
-        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_028a5e14e9b05e8171bafa06c76dd3cd2769b414\classes.dex" />
-    </item>
-    <item
-        is-multidex="true"
-        jar="C:\Users\klanezurbano\.android\build-cache\d724d09f8a766988b48646db26ce714b739eb418\output\jars\classes.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="25.0.2"
-        sha1="bdcc2a9572f18b8c90a3a157cab6cdfc97c6c736">
-        <dex dex="C:\Users\klanezurbano\git\CrimeMappingApp\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_456123801df205f4850520737790245c5e15adc3\classes.dex" />
     </item>
     <item
         is-multidex="true"
