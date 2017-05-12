@@ -15,4 +15,9 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+
+    <string name="location_fragment">Location</string>
+    <string name="alert_dialog_save">Save</string>
+    <string name="alert_dialog_cancel">Cancel</string>
+    <string name="alert_dialog_add_crime">Add Crime</string>
 </resources>
