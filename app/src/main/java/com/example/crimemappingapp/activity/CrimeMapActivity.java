@@ -3,8 +3,12 @@ package com.example.crimemappingapp.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DialogFragment;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -173,11 +177,33 @@ public class CrimeMapActivity extends AppCompatActivity implements
         return new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DialogFragment newFragment = AddCrimeFragment.newInstance(
-                        R.string.alert_dialog_add_crime);
-                newFragment.show(getFragmentManager(), "addCrime");
+                if(haveNetworkConnection()) {
+                    DialogFragment newFragment = AddCrimeFragment.newInstance(
+                            R.string.alert_dialog_add_crime);
+                    newFragment.show(getFragmentManager(), "addCrime");
+                } else {
+                    // TODO alert that needs internet connection
+                }
             }
         };
+    }
+
+    public boolean haveNetworkConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network[] networks = cm.getAllNetworks();
+        for (Network network : networks) {
+            NetworkInfo ni = cm.getNetworkInfo(network);
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
+        }
+        return haveConnectedWifi || haveConnectedMobile;
     }
 
     public void doPositiveClick() {

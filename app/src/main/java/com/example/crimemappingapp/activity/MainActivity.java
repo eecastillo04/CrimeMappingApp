@@ -21,11 +21,11 @@ public class MainActivity extends AppCompatActivity {
         initDB();
 
         // TODO remove this
-//        Intent intent = new Intent(MainActivity.this, CrimeMapActivity.class);
-//        Bundle bundle = new Bundle();
-//        bundle.putBoolean("isAdmin", true);
-//        intent.putExtras(bundle);
-//        startActivity(intent);
+        Intent intent = new Intent(MainActivity.this, CrimeMapActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isAdmin", true);
+        intent.putExtras(bundle);
+        startActivity(intent);
     }
 
     private void initDB() {
