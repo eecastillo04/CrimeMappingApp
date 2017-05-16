@@ -7,11 +7,15 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+    private static final int CRIME_TYPE_OTHERS_INDEX = 7;
     private static DatabaseHelper INSTANCE;
 
     public enum DATABASE_TABLE {
@@ -28,7 +32,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + TABLE_CRIME + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
                 + COLUMN_LOCATION + " text not null, "
-                + COLUMN_DATE + " text not null, "
+                + COLUMN_LATITUDE + " text not null, "
+                + COLUMN_LONGITUDE + " text not null, "
+                + COLUMN_DATE + " long not null, "
                 + COLUMN_CRIME_TYPE_ID + " text, "
                 + " FOREIGN KEY (" + COLUMN_CRIME_TYPE_ID + ")"
                 + " REFERENCES " + CRIME_TYPE.getTableName()
@@ -64,6 +70,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CRIME_TYPE_ID = "crime_type_id";
     public static final String COLUMN_LOCATION = "location";
     public static final String COLUMN_DATE = "crime_date";
+    public static final String COLUMN_LATITUDE = "latitude";
+    public static final String COLUMN_LONGITUDE = "longitude";
 
     public static final String DATABASE_NAME = "crime_mapping.db";
     private static final int DATABASE_VERSION = 1;
@@ -140,19 +148,58 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return adminExists;
     }
 
-    public static List<String> retrieveAllCrimeTypes() {
-        List<String> crimeTypeNames = new ArrayList<>();
+    public static void insertCrimeList(List<Crime> crimeList) {
+        SQLiteDatabase database = getDatabase(true);
+
+        for(Crime crime: crimeList) {
+            LatLng latLng = crime.getLatLng();
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_LOCATION, crime.getLocation());
+            values.put(COLUMN_LATITUDE, latLng.latitude);
+            values.put(COLUMN_LONGITUDE, latLng.longitude);
+            values.put(COLUMN_DATE, crime.getDateMillis());
+            values.put(COLUMN_CRIME_TYPE_ID, crime.getCrimeTypeId());
+
+            database.insert(DATABASE_TABLE.CRIME.getTableName(), null, values);
+        }
+
+        closeDatabase();
+    }
+
+    public static List<Crime> retrieveAllCrimes(int crimeTypeId, long from, long to) {
+        String selectStatement = buildSelectStatement(DATABASE_TABLE.CRIME.getTableName(), COLUMN_CRIME_TYPE_ID);
+        selectStatement += " and " + COLUMN_DATE + " >= ?";
+        selectStatement += " and " + COLUMN_DATE + " <= ?";
+
+        Cursor cursor = getDatabase().rawQuery(selectStatement, new String[] {String.valueOf(crimeTypeId), String.valueOf(from), String.valueOf(to)});
+        return null;
+    }
+
+    public static int retrieveCrimeTypeId(String crimeTypeName) {
+        String selectStatement = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), COLUMN_CRIME_NAME);
+
+        Cursor cursor = getDatabase().rawQuery(selectStatement, new String[] {crimeTypeName});
+
+        if(cursor.moveToFirst()) {
+            return cursor.getInt(0);
+        } else {
+            return CRIME_TYPE_OTHERS_INDEX;
+        }
+    }
+
+    public static HashMap<Integer, String> retrieveAllCrimeTypes() {
+        HashMap<Integer, String> crimeTypeMap = new HashMap<>();
 
         String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), new String[]{});
 
         Cursor cursor = getDatabase().rawQuery(selectString, null);
         if (cursor.moveToFirst()) {
-            crimeTypeNames.add(cursor.getString(1));
+            crimeTypeMap.put(cursor.getInt(0), cursor.getString(1));
             while(cursor.moveToNext()) {
-                crimeTypeNames.add(cursor.getString(1));
+                crimeTypeMap.put(cursor.getInt(0), cursor.getString(1));
             }
         }
-        return crimeTypeNames;
+        return crimeTypeMap;
     }
 
     private static String buildSelectStatement(String tableName, String ... columnNames) {

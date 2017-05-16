@@ -25,7 +25,6 @@ import com.example.crimemappingapp.activity.CrimeMapActivity;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.PlaceDetailsJSONParser;
 import com.example.crimemappingapp.utils.PlaceJSONParser;
-import com.google.android.gms.maps.SupportMapFragment;
 
 import org.json.JSONObject;
 
@@ -35,6 +34,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -52,6 +52,8 @@ public class AddCrimeFragment extends DialogFragment {
 
     final int PLACES=0;
     final int PLACES_DETAILS=1;
+
+    private HashMap<Integer, String> crimeTypeMap;
 
     public static AddCrimeFragment newInstance(int title) {
         AddCrimeFragment frag = new AddCrimeFragment();
@@ -151,7 +153,9 @@ public class AddCrimeFragment extends DialogFragment {
         dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
 
         Spinner crimeTypeSpinner = (Spinner) v.findViewById(R.id.crime_type_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, DatabaseHelper.retrieveAllCrimeTypes());
+        crimeTypeMap = DatabaseHelper.retrieveAllCrimeTypes();
+        List<String> crimeTypeNames = new ArrayList<>(crimeTypeMap.values());
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, crimeTypeNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
     }
@@ -341,6 +345,7 @@ public class AddCrimeFragment extends DialogFragment {
 
                     // Creating a SimpleAdapter for the AutoCompleteTextView
                     SimpleAdapter adapter = new SimpleAdapter(getActivity().getBaseContext(), result, android.R.layout.simple_list_item_1, from, to);
+                    int count = adapter.getCount();
 
                     // Setting the adapter
                     atvPlaces.setAdapter(adapter);

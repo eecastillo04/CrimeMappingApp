@@ -1,30 +1,33 @@
 package com.example.crimemappingapp.activity;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.Spinner;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.fragment.AddCrimeFragment;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
+import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
 import com.google.android.gms.common.ConnectionResult;
@@ -39,6 +42,20 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
@@ -52,6 +69,11 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     private boolean isAdmin;
 
+    private static final int READ_REQUEST_CODE = 42;
+
+    private List<FetchLatLongFromService> latLngFetcherList = new ArrayList<>();
+    private List<Crime> importCrimeList = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,7 +83,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         // TEMP CRIME TYPE SPINNER
         Spinner crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, DatabaseHelper.retrieveAllCrimeTypes());
+        HashMap<Integer, String> crimeTypeMap = DatabaseHelper.retrieveAllCrimeTypes();
+        List<String> crimeTypeNames = new ArrayList<>(crimeTypeMap.values());
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, crimeTypeNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
@@ -73,9 +97,12 @@ public class CrimeMapActivity extends AppCompatActivity implements
         Button toYearSpinner = (Button) findViewById(R.id.to_date_button);
         toYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
 
-        Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
-        addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
-        addCrimeButton.setOnClickListener(createAddCrimeOnClickListener());
+        Button importButton = (Button) findViewById(R.id.import_button);
+        importButton.setOnClickListener(createImportOnClickListener());
+
+//        Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
+//        addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
+//        addCrimeButton.setOnClickListener(createAddCrimeOnClickListener());
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -178,12 +205,20 @@ public class CrimeMapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 if(haveNetworkConnection()) {
-                    DialogFragment newFragment = AddCrimeFragment.newInstance(
-                            R.string.alert_dialog_add_crime);
+                    DialogFragment newFragment = AddCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
                     newFragment.show(getFragmentManager(), "addCrime");
                 } else {
                     // TODO alert that needs internet connection
                 }
+            }
+        };
+    }
+
+    private View.OnClickListener createImportOnClickListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                performFileSearch();
             }
         };
     }
@@ -204,6 +239,214 @@ public class CrimeMapActivity extends AppCompatActivity implements
                     haveConnectedMobile = true;
         }
         return haveConnectedWifi || haveConnectedMobile;
+    }
+
+    /**
+     * Fires an intent to spin up the "file chooser" UI and select an image.
+     */
+    public void performFileSearch() {
+
+        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
+        // browser.
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+        // Filter to only show results that can be "opened", such as a
+        // file (as opposed to a list of contacts or timezones)
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        // Filter to show only images, using the image MIME data type.
+        // If one wanted to search for ogg vorbis files, the type would be "audio/ogg".
+        // To search for all documents available via installed storage providers,
+        // it would be "*/*".
+        intent.setType("*/*");
+
+        startActivityForResult(intent, READ_REQUEST_CODE);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode,
+                                 Intent resultData) {
+
+        // The ACTION_OPEN_DOCUMENT intent was sent with the request code
+        // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
+        // response to some other intent, and the code below shouldn't run at all.
+
+        if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            // The document selected by the user won't be returned in the intent.
+            // Instead, a URI to that document will be contained in the return intent
+            // provided to this method as a parameter.
+            // Pull that URI using resultData.getData().
+            Uri uri = null;
+            if (resultData != null) {
+                uri = resultData.getData();
+                try {
+                    String crimeDataString = readTextFromUri(uri);
+                    if(haveNetworkConnection()) {
+                        parseCrimes(crimeDataString);
+                        new ImportParsedCrimesToDB().execute();
+                    } else {
+                        // TODO alert that internet connection is required
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public class ImportParsedCrimesToDB extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            // check if fetching latlng is already done
+            while(!latLngFetcherList.isEmpty());
+
+            DatabaseHelper.insertCrimeList(importCrimeList);
+
+            return null;
+        }
+    }
+
+    public class FetchLatLongFromService extends
+            AsyncTask<Void, Void, StringBuilder> {
+        Crime crime;
+
+        public FetchLatLongFromService(Crime crime) {
+            this.crime = crime;
+
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            this.cancel(true);
+        }
+
+        @Override
+        protected StringBuilder doInBackground(Void... params) {
+            try {
+                HttpURLConnection conn = null;
+                StringBuilder jsonResults = new StringBuilder();
+                String googleMapUrl = "http://maps.googleapis.com/maps/api/geocode/json?address="
+                        + this.crime.getLocation().replaceAll("\\s", "") + "&sensor=false";
+
+                URL url = new URL(googleMapUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                InputStreamReader in = new InputStreamReader(
+                        conn.getInputStream());
+                int read;
+                char[] buff = new char[1024];
+                while ((read = in.read(buff)) != -1) {
+                    jsonResults.append(buff, 0, read);
+                }
+                return jsonResults;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+
+        }
+
+        @Override
+        protected void onPostExecute(StringBuilder result) {
+            super.onPostExecute(result);
+            LatLng point = null;
+            try {
+                JSONObject jsonObj = new JSONObject(result.toString());
+                JSONArray resultJsonArray = jsonObj.getJSONArray("results");
+
+                // Extract the Place descriptions from the results
+                // resultList = new ArrayList<String>(resultJsonArray.length());
+
+                JSONObject before_geometry_jsonObj = resultJsonArray
+                        .getJSONObject(0);
+
+                JSONObject geometry_jsonObj = before_geometry_jsonObj
+                        .getJSONObject("geometry");
+
+                JSONObject location_jsonObj = geometry_jsonObj
+                        .getJSONObject("location");
+
+                String lat_helper = location_jsonObj.getString("lat");
+                double lat = Double.valueOf(lat_helper);
+
+
+                String lng_helper = location_jsonObj.getString("lng");
+                double lng = Double.valueOf(lng_helper);
+
+
+                point = new LatLng(lat, lng);
+
+            } catch (JSONException e) {
+                try {
+                    point = getLocationFromAddress(crime.getLocation());
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+
+            if(point != null) {
+                crime.setLatLng(point);
+                importCrimeList.add(crime);
+            }
+
+            latLngFetcherList.remove(this);
+        }
+    }
+
+    private List<Crime> parseCrimes(String crimeDataString) throws IOException {
+        List<Crime> crimeList = new ArrayList<>();
+        String[] crimeDataStringLines = crimeDataString.split("\n");
+        for(String crimeDataStringLine: crimeDataStringLines) {
+            String[] crimeData = crimeDataStringLine.split("\t");
+            String crimeTypeName = crimeData[0];
+            String location = crimeData[1];
+            String dateString = crimeData[2];
+
+            Crime crime = new Crime();
+            crime.setCrimeTypeId(DatabaseHelper.retrieveCrimeTypeId(crimeTypeName));
+            crime.setDateMillis(DateUtils.convertToMillis(dateString));
+            crime.setLocation(location);
+            FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
+            latLngFetcherList.add(latLngFetcher);
+            latLngFetcher.execute();
+        }
+
+        return crimeList;
+    }
+
+    private LatLng getLocationFromAddress(String strAddress) throws IOException {
+        Geocoder coder = new Geocoder(this);
+        List<Address> address;
+        LatLng p1 = null;
+
+        address = coder.getFromLocationName(strAddress,5);
+        if (address==null) {
+            return null;
+        }
+        Address location=address.get(0);
+        location.getLatitude();
+        location.getLongitude();
+
+        p1 = new LatLng(location.getLatitude() * 1E6,
+                location.getLongitude() * 1E6);
+        return p1;
+    }
+
+    private String readTextFromUri(Uri uri) throws IOException {
+        InputStream inputStream = getContentResolver().openInputStream(uri);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                inputStream));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        int count = 0;
+        while ((line = reader.readLine()) != null) {
+            if(count != 0) {
+                stringBuilder.append(line);
+                stringBuilder.append("\n");
+            }
+            count++;
+        }
+        return stringBuilder.toString();
     }
 
     public void doPositiveClick() {
