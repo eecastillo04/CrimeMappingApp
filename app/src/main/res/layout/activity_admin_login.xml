@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    tools:context="com.example.crimemappingapp.AdminLoginActivity">
+    tools:context="com.example.crimemappingapp.activity.AdminLoginActivity">
 
     <EditText
         android:id="@+id/usernameInput"

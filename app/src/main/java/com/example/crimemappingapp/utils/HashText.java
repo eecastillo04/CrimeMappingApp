@@ -1,13 +1,9 @@
-package com.example.crimemappingapp;
+package com.example.crimemappingapp.utils;
 
 import android.util.Log;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-/**
- * Created by klanezurbano on 30/04/2017.
- */
 
 public class HashText {
     static String sha1(String input)  {

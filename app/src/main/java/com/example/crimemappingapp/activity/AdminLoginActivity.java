@@ -1,11 +1,13 @@
-package com.example.crimemappingapp;
+package com.example.crimemappingapp.activity;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+
+import com.example.crimemappingapp.R;
+import com.example.crimemappingapp.utils.DatabaseHelper;
 
 public class AdminLoginActivity extends AppCompatActivity {
 
@@ -20,7 +22,7 @@ public class AdminLoginActivity extends AppCompatActivity {
         String password = ((EditText) findViewById(R.id.passwordInput)).getText().toString();
 
         // check if input is valid admin login credentials
-        if(DatabaseHelper.getInstance(this).isValidAdminCredentials(username, password)) {
+        if(DatabaseHelper.createInstance(this).isValidAdminCredentials(username, password)) {
             Intent intent = new Intent(AdminLoginActivity.this, CrimeMapActivity.class);
             Bundle bundle = new Bundle();
             bundle.putBoolean("isAdmin", true);
