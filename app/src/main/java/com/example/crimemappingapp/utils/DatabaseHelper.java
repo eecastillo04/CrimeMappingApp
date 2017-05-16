@@ -14,8 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-
-    private static final int CRIME_TYPE_OTHERS_INDEX = 7;
     private static DatabaseHelper INSTANCE;
 
     public enum DATABASE_TABLE {
@@ -173,18 +171,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = getDatabase().rawQuery(selectStatement, new String[] {String.valueOf(crimeTypeId), String.valueOf(from), String.valueOf(to)});
         return null;
-    }
-
-    public static int retrieveCrimeTypeId(String crimeTypeName) {
-        String selectStatement = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), COLUMN_CRIME_NAME);
-
-        Cursor cursor = getDatabase().rawQuery(selectStatement, new String[] {crimeTypeName});
-
-        if(cursor.moveToFirst()) {
-            return cursor.getInt(0);
-        } else {
-            return CRIME_TYPE_OTHERS_INDEX;
-        }
     }
 
     public static HashMap<Integer, String> retrieveAllCrimeTypes() {

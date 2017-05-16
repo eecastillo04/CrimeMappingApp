@@ -403,7 +403,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
             String dateString = crimeData[2];
 
             Crime crime = new Crime();
-            crime.setCrimeTypeId(DatabaseHelper.retrieveCrimeTypeId(crimeTypeName));
+            crime.setCrimeTypeId(CrimeMappingUtils.getCrimeTypeId(crimeTypeName));
             crime.setDateMillis(DateUtils.convertToMillis(dateString));
             crime.setLocation(location);
             FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
