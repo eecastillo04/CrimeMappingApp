@@ -75,6 +75,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     private List<FetchLatLongFromService> latLngFetcherList = new ArrayList<>();
     private List<Crime> importCrimeList = new ArrayList<>();
+    private Spinner crimeTypeSpinner;
+    private Button fromYearSpinner;
+    private Button toYearSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,18 +87,21 @@ public class CrimeMapActivity extends AppCompatActivity implements
         isAdmin = getIntent().getExtras().getBoolean("isAdmin");
 
         // TEMP CRIME TYPE SPINNER
-        Spinner crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
+        crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CrimeMappingUtils.getSortedCrimeTypes());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
         // TEMP FROM YEAR SPINNER
-        Button fromYearSpinner = (Button) findViewById(R.id.from_date_button);
+        fromYearSpinner = (Button) findViewById(R.id.from_date_button);
         fromYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
 
         // TEMP FROM YEAR SPINNER
-        Button toYearSpinner = (Button) findViewById(R.id.to_date_button);
+        toYearSpinner = (Button) findViewById(R.id.to_date_button);
         toYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
+        
+        Button searchButton = (Button) findViewById(R.id.search_button);
+        searchButton.setOnClickListener(createSearchCrimesOnClickListener());
 
         Button importButton = (Button) findViewById(R.id.import_button);
         importButton.setOnClickListener(createImportOnClickListener());
@@ -200,6 +206,24 @@ public class CrimeMapActivity extends AppCompatActivity implements
         mGoogleApiClient.connect();
     }
 
+    private View.OnClickListener createSearchCrimesOnClickListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
+                            CrimeMappingUtils.getCrimeTypeId(crimeTypeSpinner.getSelectedItem().toString()),
+                            DateUtils.convertToMillis(fromYearSpinner.getText().toString()),
+                            DateUtils.convertToMillis(toYearSpinner.getText().toString())
+                    );
+                    markCrimesOnMap(crimeList);
+                } catch(Exception e) {
+                    // TODO alert check input requirements for searching
+                }
+            }
+        };
+    }
+
     private View.OnClickListener createAddCrimeOnClickListener() {
         return new View.OnClickListener() {
             @Override
@@ -221,6 +245,15 @@ public class CrimeMapActivity extends AppCompatActivity implements
                 performFileSearch();
             }
         };
+    }
+
+    private void markCrimesOnMap(List<Crime> crimeList) {
+        for(Crime crime: crimeList) {
+            MarkerOptions options = new MarkerOptions();
+            options.position(crime.getLatLng());
+
+            mMap.addMarker(options);
+        }
     }
 
     public boolean haveNetworkConnection() {

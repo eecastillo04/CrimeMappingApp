@@ -165,12 +165,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public static List<Crime> retrieveAllCrimes(int crimeTypeId, long from, long to) {
+        List<Crime> crimeList = new ArrayList<>();
         String selectStatement = buildSelectStatement(DATABASE_TABLE.CRIME.getTableName(), COLUMN_CRIME_TYPE_ID);
         selectStatement += " and " + COLUMN_DATE + " >= ?";
         selectStatement += " and " + COLUMN_DATE + " <= ?";
 
         Cursor cursor = getDatabase().rawQuery(selectStatement, new String[] {String.valueOf(crimeTypeId), String.valueOf(from), String.valueOf(to)});
-        return null;
+        if (cursor.moveToFirst()) {
+            crimeList.add(buildCrime(cursor));
+            while(cursor.moveToNext()) {
+                crimeList.add(buildCrime(cursor));
+            }
+        }
+        return crimeList;
+    }
+
+    private static Crime buildCrime(Cursor cursor) {
+        Crime crime = new Crime();
+        crime.setLocation(cursor.getString(1));
+        crime.setLatLng(new LatLng(Double.valueOf(cursor.getString(2)), Double.valueOf(cursor.getString(3))));
+        crime.setDateMillis(cursor.getLong(4));
+        crime.setCrimeTypeId(cursor.getInt(5));
+        return crime;
     }
 
     public static HashMap<Integer, String> retrieveAllCrimeTypes() {
