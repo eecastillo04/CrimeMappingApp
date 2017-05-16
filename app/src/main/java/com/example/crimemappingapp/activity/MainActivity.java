@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.example.crimemappingapp.R;
+import com.example.crimemappingapp.utils.CrimeMappingUtils;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,12 +20,24 @@ public class MainActivity extends AppCompatActivity {
         this.deleteDatabase(DatabaseHelper.DATABASE_NAME);
 
         initDB();
+
+        // TODO remove this
+        Intent intent = new Intent(MainActivity.this, CrimeMapActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("isAdmin", true);
+        intent.putExtras(bundle);
+        startActivity(intent);
     }
 
     private void initDB() {
         DatabaseHelper.createInstance(getApplicationContext());
         initializeAdmin();
         initializeCrimeTypes();
+        cacheCrimeTypeMap();
+    }
+
+    private void cacheCrimeTypeMap() {
+        CrimeMappingUtils.setCrimeTypeMap(DatabaseHelper.retrieveAllCrimeTypes());
     }
 
     public void openAdminLoginActivity(View view) {
