@@ -28,6 +28,7 @@ import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.fragment.AddCrimeFragment;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
 import com.example.crimemappingapp.utils.Crime;
+import com.example.crimemappingapp.utils.CrimeMappingUtils;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
 import com.google.android.gms.common.ConnectionResult;
@@ -55,6 +56,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -83,9 +85,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         // TEMP CRIME TYPE SPINNER
         Spinner crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
-        HashMap<Integer, String> crimeTypeMap = DatabaseHelper.retrieveAllCrimeTypes();
-        List<String> crimeTypeNames = new ArrayList<>(crimeTypeMap.values());
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, crimeTypeNames);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CrimeMappingUtils.getSortedCrimeTypes());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
