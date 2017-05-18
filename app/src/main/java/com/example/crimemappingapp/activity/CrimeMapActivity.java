@@ -6,6 +6,8 @@ import android.app.DialogFragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -22,13 +24,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.fragment.AddCrimeFragment;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
 import com.example.crimemappingapp.utils.Crime;
-import com.example.crimemappingapp.utils.CrimeMappingUtils;
+import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
 import com.google.android.gms.common.ConnectionResult;
@@ -39,8 +43,12 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
@@ -54,9 +62,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -88,7 +94,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         // TEMP CRIME TYPE SPINNER
         crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CrimeMappingUtils.getSortedCrimeTypes());
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
@@ -203,6 +209,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
         isMapReady = true;
         mMap = googleMap;
+        CustomInfoWindowAdapter infoWindowAdapter = new CustomInfoWindowAdapter();
+        mMap.setInfoWindowAdapter(infoWindowAdapter);
+        mMap.setOnInfoWindowClickListener(infoWindowAdapter);
         mGoogleApiClient.connect();
     }
 
@@ -212,7 +221,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 try {
                     List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
-                            CrimeMappingUtils.getCrimeTypeId(crimeTypeSpinner.getSelectedItem().toString()),
+                            CrimeTypes.getCrimeTypeId(crimeTypeSpinner.getSelectedItem().toString()),
                             DateUtils.convertToMillis(fromYearSpinner.getText().toString()),
                             DateUtils.convertToMillis(toYearSpinner.getText().toString())
                     );
@@ -251,9 +260,18 @@ public class CrimeMapActivity extends AppCompatActivity implements
         for(Crime crime: crimeList) {
             MarkerOptions options = new MarkerOptions();
             options.position(crime.getLatLng());
+            options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
 
-            mMap.addMarker(options);
+            Marker marker = mMap.addMarker(options);
+            marker.setTag(crime);
         }
+    }
+
+    // method definition
+    public BitmapDescriptor getMarkerIcon(String color) {
+        float[] hsv = new float[3];
+        Color.colorToHSV(Color.parseColor(color), hsv);
+        return BitmapDescriptorFactory.defaultMarker(hsv[0]);
     }
 
     public boolean haveNetworkConnection() {
@@ -436,7 +454,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
             String dateString = crimeData[2];
 
             Crime crime = new Crime();
-            crime.setCrimeTypeId(CrimeMappingUtils.getCrimeTypeId(crimeTypeName));
+            crime.setCrimeType(CrimeTypes.getCrimeType(crimeTypeName));
             crime.setDateMillis(DateUtils.convertToMillis(dateString));
             crime.setLocation(location);
             FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
@@ -487,4 +505,43 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     public void doNegativeClick() {
     }
+
+    public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter, GoogleMap.OnInfoWindowClickListener {
+
+        @Override
+        public View getInfoWindow(Marker marker) {
+            return null;
+        }
+
+        @Override
+        public View getInfoContents(final Marker marker) {
+            Object tag = marker.getTag();
+            if(tag == null) return null;
+
+            View v = getLayoutInflater().inflate(R.layout.info_window_layout, null);
+
+            final Crime crime = (Crime) marker.getTag();
+
+            TextView locationLabel = (TextView) v.findViewById(R.id.locationLabel);
+            locationLabel.setText(crime.getLocation());
+            TextView crimeLabel = (TextView) v.findViewById(R.id.crimeLabel);
+            crimeLabel.setText(crime.getCrimeType().getDisplayName());
+            TextView dateHappenedLabel = (TextView) v.findViewById(R.id.dateHappenedLabel);
+            dateHappenedLabel.setText(DateUtils.buildDateDisplay(crime.getDateMillis()));
+
+            if(!isAdmin) {
+                v.findViewById(R.id.adminPrivilegeContent).setVisibility(View.INVISIBLE);
+            }
+            return v;
+        }
+
+        @Override
+        public void onInfoWindowClick(Marker marker) {
+            // TODO update/delete crime record modal
+//            final Crime crime = (Crime) marker.getTag();
+//            DatabaseHelper.deleteCrime(crime.getId());
+//            marker.remove();
+        }
+    }
+
 }

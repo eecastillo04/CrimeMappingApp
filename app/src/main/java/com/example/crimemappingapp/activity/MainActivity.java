@@ -32,13 +32,13 @@ public class MainActivity extends AppCompatActivity {
     private void initDB() {
         DatabaseHelper.createInstance(getApplicationContext());
         initializeAdmin();
-        initializeCrimeTypes();
-        cacheCrimeTypeMap();
+//        initializeCrimeTypes();
+//        cacheCrimeTypeMap();
     }
 
-    private void cacheCrimeTypeMap() {
-        CrimeMappingUtils.setCrimeTypeMap(DatabaseHelper.retrieveAllCrimeTypes());
-    }
+//    private void cacheCrimeTypeMap() {
+//        CrimeMappingUtils.setCrimeTypeMap(DatabaseHelper.retrieveAllCrimeTypes());
+//    }
 
     public void openAdminLoginActivity(View view) {
         Intent intent = new Intent(MainActivity.this, AdminLoginActivity.class);
@@ -57,14 +57,14 @@ public class MainActivity extends AppCompatActivity {
         DatabaseHelper.insertAdmin("admin", "password");
     }
 
-    private void initializeCrimeTypes() {
-        DatabaseHelper.insertCrimeType("Arson");
-        DatabaseHelper.insertCrimeType("Assault");
-        DatabaseHelper.insertCrimeType("Drug Related");
-        DatabaseHelper.insertCrimeType("Murder");
-        DatabaseHelper.insertCrimeType("Rape");
-        DatabaseHelper.insertCrimeType("Robbery");
-        DatabaseHelper.insertCrimeType("Theft");
-        DatabaseHelper.insertCrimeType("Others");
-    }
+//    private void initializeCrimeTypes() {
+//        DatabaseHelper.insertCrimeType("Arson");
+//        DatabaseHelper.insertCrimeType("Assault");
+//        DatabaseHelper.insertCrimeType("Drug Related");
+//        DatabaseHelper.insertCrimeType("Murder");
+//        DatabaseHelper.insertCrimeType("Rape");
+//        DatabaseHelper.insertCrimeType("Robbery");
+//        DatabaseHelper.insertCrimeType("Theft");
+//        DatabaseHelper.insertCrimeType("Others");
+//    }
 }

@@ -22,6 +22,7 @@ import android.widget.Spinner;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.activity.CrimeMapActivity;
+import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.PlaceDetailsJSONParser;
 import com.example.crimemappingapp.utils.PlaceJSONParser;
@@ -153,9 +154,7 @@ public class AddCrimeFragment extends DialogFragment {
         dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
 
         Spinner crimeTypeSpinner = (Spinner) v.findViewById(R.id.crime_type_spinner);
-        crimeTypeMap = DatabaseHelper.retrieveAllCrimeTypes();
-        List<String> crimeTypeNames = new ArrayList<>(crimeTypeMap.values());
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, crimeTypeNames);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
     }

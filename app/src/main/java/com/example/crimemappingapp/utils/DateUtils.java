@@ -20,6 +20,13 @@ public class DateUtils {
         return sdf.format(calendar.getTime());
     }
 
+    public static String buildDateDisplay(long millis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(millis);
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT, Locale.getDefault());
+        return sdf.format(calendar.getTime());
+    }
+
     public static long convertToMillis(String dateString) {
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT, Locale.getDefault());
         try {
