@@ -9,21 +9,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!--<fragment-->
-            <!--android:id="@+id/place_autocomplete_fragment"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"-->
-            <!--/>-->
-
-        <!--<com.example.crimemappingapp.fragment.CustomAutoCompleteTextView-->
-            <!--android:id="@+id/atv_places"-->
-            <!--android:layout_width="fill_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_alignParentTop="true"-->
-            <!--android:hint="@string/location_fragment"-->
-            <!--android:maxLines="1" />-->
-
         <EditText
             android:id="@+id/location_field"
             android:layout_width="fill_parent"

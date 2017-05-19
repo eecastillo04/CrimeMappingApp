@@ -109,10 +109,6 @@ public class CrimeMapActivity extends AppCompatActivity implements
         Button importButton = (Button) findViewById(R.id.import_button);
         importButton.setOnClickListener(createImportOnClickListener());
 
-//        Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
-//        addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
-//        addCrimeButton.setOnClickListener(createAddCrimeOnClickListener());
-
         Button clearMapButton = (Button) findViewById(R.id.clear_map_button);
         clearMapButton.setOnClickListener(createClearMapOnClickListener());
 
@@ -235,20 +231,6 @@ public class CrimeMapActivity extends AppCompatActivity implements
             }
         };
     }
-
-//    private View.OnClickListener createAddCrimeOnClickListener() {
-//        return new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
-//                    DialogFragment newFragment = EditCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
-//                    newFragment.show(getFragmentManager(), "addCrime");
-//                } else {
-//                    // TODO alert that needs internet connection
-//                }
-//            }
-//        };
-//    }
 
     private View.OnClickListener createClearMapOnClickListener() {
         return new View.OnClickListener() {
