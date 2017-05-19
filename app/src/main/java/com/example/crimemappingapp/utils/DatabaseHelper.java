@@ -191,8 +191,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return crime;
     }
 
+    public static void updateCrime(int crimeId, int crimeTypeId, long dateMillis) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_DATE, dateMillis);
+        values.put(COLUMN_CRIME_TYPE_ID, crimeTypeId);
+        getDatabase(true).update(DATABASE_TABLE.CRIME.getTableName(), values, COLUMN_ID + " = ?" , new String[] {String.valueOf(crimeId)});
+        closeDatabase();
+    }
+
     public static void deleteCrime(int crimeId) {
-        getDatabase(true).delete(DATABASE_TABLE.CRIME.getTableName(), COLUMN_ID + " = " + crimeId, null);
+        getDatabase(true).delete(DATABASE_TABLE.CRIME.getTableName(), COLUMN_ID + " = ?" , new String[] {String.valueOf(crimeId)});
         closeDatabase();
     }
 

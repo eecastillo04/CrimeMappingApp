@@ -3,17 +3,12 @@ package com.example.crimemappingapp.activity;
 import android.Manifest;
 import android.app.Activity;
 import android.app.DialogFragment;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -24,14 +19,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import com.example.crimemappingapp.R;
-import com.example.crimemappingapp.fragment.AddCrimeFragment;
+import com.example.crimemappingapp.fragment.EditCrimeFragment;
+import com.example.crimemappingapp.fragment.CustomInfoWindowAdapter;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
 import com.example.crimemappingapp.utils.Crime;
+import com.example.crimemappingapp.utils.CrimeMappingUtils;
 import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
@@ -46,7 +41,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -62,7 +56,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -85,6 +81,10 @@ public class CrimeMapActivity extends AppCompatActivity implements
     private Button fromYearSpinner;
     private Button toYearSpinner;
 
+    private Map<Integer, Marker> crimeMarkersMap = new HashMap<>();
+    private Map<Integer, Crime> visibleCrimesMap = new HashMap<>();
+    private boolean isEnabledHeatmap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,17 +92,14 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         isAdmin = getIntent().getExtras().getBoolean("isAdmin");
 
-        // TEMP CRIME TYPE SPINNER
         crimeTypeSpinner = (Spinner) findViewById(R.id.crime_type_spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
 
-        // TEMP FROM YEAR SPINNER
         fromYearSpinner = (Button) findViewById(R.id.from_date_button);
         fromYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
 
-        // TEMP FROM YEAR SPINNER
         toYearSpinner = (Button) findViewById(R.id.to_date_button);
         toYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
         
@@ -115,6 +112,12 @@ public class CrimeMapActivity extends AppCompatActivity implements
 //        Button addCrimeButton = (Button) findViewById(R.id.add_crime_button);
 //        addCrimeButton.setVisibility(isAdmin ? View.VISIBLE: View.INVISIBLE);
 //        addCrimeButton.setOnClickListener(createAddCrimeOnClickListener());
+
+        Button clearMapButton = (Button) findViewById(R.id.clear_map_button);
+        clearMapButton.setOnClickListener(createClearMapOnClickListener());
+
+        Button heatmapButton = (Button) findViewById(R.id.heatmap_button);
+        heatmapButton.setOnClickListener(createHeatmapOnClickListener());
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -209,7 +212,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
         isMapReady = true;
         mMap = googleMap;
-        CustomInfoWindowAdapter infoWindowAdapter = new CustomInfoWindowAdapter();
+        CustomInfoWindowAdapter infoWindowAdapter = new CustomInfoWindowAdapter(this, isAdmin);
         mMap.setInfoWindowAdapter(infoWindowAdapter);
         mMap.setOnInfoWindowClickListener(infoWindowAdapter);
         mGoogleApiClient.connect();
@@ -233,16 +236,45 @@ public class CrimeMapActivity extends AppCompatActivity implements
         };
     }
 
-    private View.OnClickListener createAddCrimeOnClickListener() {
+//    private View.OnClickListener createAddCrimeOnClickListener() {
+//        return new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
+//                    DialogFragment newFragment = EditCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
+//                    newFragment.show(getFragmentManager(), "addCrime");
+//                } else {
+//                    // TODO alert that needs internet connection
+//                }
+//            }
+//        };
+//    }
+
+    private View.OnClickListener createClearMapOnClickListener() {
         return new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(haveNetworkConnection()) {
-                    DialogFragment newFragment = AddCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
-                    newFragment.show(getFragmentManager(), "addCrime");
-                } else {
-                    // TODO alert that needs internet connection
+                for(Marker marker: crimeMarkersMap.values()) {
+                    marker.remove();
                 }
+
+                visibleCrimesMap.clear();
+                crimeMarkersMap.clear();
+            }
+        };
+    }
+
+    private View.OnClickListener createHeatmapOnClickListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(isEnabledHeatmap) {
+                    
+                } else {
+                    
+                }
+                
+                isEnabledHeatmap = !isEnabledHeatmap;
             }
         };
     }
@@ -258,12 +290,18 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     private void markCrimesOnMap(List<Crime> crimeList) {
         for(Crime crime: crimeList) {
+            int crimeId = crime.getId();
+            if(visibleCrimesMap.containsKey(crimeId)) continue;
+
             MarkerOptions options = new MarkerOptions();
             options.position(crime.getLatLng());
             options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
 
             Marker marker = mMap.addMarker(options);
             marker.setTag(crime);
+
+            visibleCrimesMap.put(crimeId, crime);
+            crimeMarkersMap.put(crimeId, marker);
         }
     }
 
@@ -272,24 +310,6 @@ public class CrimeMapActivity extends AppCompatActivity implements
         float[] hsv = new float[3];
         Color.colorToHSV(Color.parseColor(color), hsv);
         return BitmapDescriptorFactory.defaultMarker(hsv[0]);
-    }
-
-    public boolean haveNetworkConnection() {
-        boolean haveConnectedWifi = false;
-        boolean haveConnectedMobile = false;
-
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        Network[] networks = cm.getAllNetworks();
-        for (Network network : networks) {
-            NetworkInfo ni = cm.getNetworkInfo(network);
-            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
-                if (ni.isConnected())
-                    haveConnectedWifi = true;
-            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
-                if (ni.isConnected())
-                    haveConnectedMobile = true;
-        }
-        return haveConnectedWifi || haveConnectedMobile;
     }
 
     /**
@@ -332,7 +352,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
                 uri = resultData.getData();
                 try {
                     String crimeDataString = readTextFromUri(uri);
-                    if(haveNetworkConnection()) {
+                    if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
                         parseCrimes(crimeDataString);
                         new ImportParsedCrimesToDB().execute();
                     } else {
@@ -343,6 +363,44 @@ public class CrimeMapActivity extends AppCompatActivity implements
                 }
             }
         }
+    }
+
+    private String readTextFromUri(Uri uri) throws IOException {
+        InputStream inputStream = getContentResolver().openInputStream(uri);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                inputStream));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        int count = 0;
+        while ((line = reader.readLine()) != null) {
+            if(count != 0) {
+                stringBuilder.append(line);
+                stringBuilder.append("\n");
+            }
+            count++;
+        }
+        return stringBuilder.toString();
+    }
+
+    private List<Crime> parseCrimes(String crimeDataString) throws IOException {
+        List<Crime> crimeList = new ArrayList<>();
+        String[] crimeDataStringLines = crimeDataString.split("\n");
+        for(String crimeDataStringLine: crimeDataStringLines) {
+            String[] crimeData = crimeDataStringLine.split("\t");
+            String crimeTypeName = crimeData[0];
+            String location = crimeData[1];
+            String dateString = crimeData[2];
+
+            Crime crime = new Crime();
+            crime.setCrimeType(CrimeTypes.getCrimeType(crimeTypeName));
+            crime.setDateMillis(DateUtils.convertToMillis(dateString));
+            crime.setLocation(location);
+            FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
+            latLngFetcherList.add(latLngFetcher);
+            latLngFetcher.execute();
+        }
+
+        return crimeList;
     }
 
     public class ImportParsedCrimesToDB extends AsyncTask<Void, Void, Void> {
@@ -444,27 +502,6 @@ public class CrimeMapActivity extends AppCompatActivity implements
         }
     }
 
-    private List<Crime> parseCrimes(String crimeDataString) throws IOException {
-        List<Crime> crimeList = new ArrayList<>();
-        String[] crimeDataStringLines = crimeDataString.split("\n");
-        for(String crimeDataStringLine: crimeDataStringLines) {
-            String[] crimeData = crimeDataStringLine.split("\t");
-            String crimeTypeName = crimeData[0];
-            String location = crimeData[1];
-            String dateString = crimeData[2];
-
-            Crime crime = new Crime();
-            crime.setCrimeType(CrimeTypes.getCrimeType(crimeTypeName));
-            crime.setDateMillis(DateUtils.convertToMillis(dateString));
-            crime.setLocation(location);
-            FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
-            latLngFetcherList.add(latLngFetcher);
-            latLngFetcher.execute();
-        }
-
-        return crimeList;
-    }
-
     private LatLng getLocationFromAddress(String strAddress) throws IOException {
         Geocoder coder = new Geocoder(this);
         List<Address> address;
@@ -483,65 +520,15 @@ public class CrimeMapActivity extends AppCompatActivity implements
         return p1;
     }
 
-    private String readTextFromUri(Uri uri) throws IOException {
-        InputStream inputStream = getContentResolver().openInputStream(uri);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                inputStream));
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        int count = 0;
-        while ((line = reader.readLine()) != null) {
-            if(count != 0) {
-                stringBuilder.append(line);
-                stringBuilder.append("\n");
-            }
-            count++;
-        }
-        return stringBuilder.toString();
+    public void doPositiveClick(Crime crime) {
+        DatabaseHelper.updateCrime(crime.getId(), crime.getCrimeType().getId(), crime.getDateMillis());
     }
 
-    public void doPositiveClick() {
-    }
-
-    public void doNegativeClick() {
-    }
-
-    public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter, GoogleMap.OnInfoWindowClickListener {
-
-        @Override
-        public View getInfoWindow(Marker marker) {
-            return null;
-        }
-
-        @Override
-        public View getInfoContents(final Marker marker) {
-            Object tag = marker.getTag();
-            if(tag == null) return null;
-
-            View v = getLayoutInflater().inflate(R.layout.info_window_layout, null);
-
-            final Crime crime = (Crime) marker.getTag();
-
-            TextView locationLabel = (TextView) v.findViewById(R.id.locationLabel);
-            locationLabel.setText(crime.getLocation());
-            TextView crimeLabel = (TextView) v.findViewById(R.id.crimeLabel);
-            crimeLabel.setText(crime.getCrimeType().getDisplayName());
-            TextView dateHappenedLabel = (TextView) v.findViewById(R.id.dateHappenedLabel);
-            dateHappenedLabel.setText(DateUtils.buildDateDisplay(crime.getDateMillis()));
-
-            if(!isAdmin) {
-                v.findViewById(R.id.adminPrivilegeContent).setVisibility(View.INVISIBLE);
-            }
-            return v;
-        }
-
-        @Override
-        public void onInfoWindowClick(Marker marker) {
-            // TODO update/delete crime record modal
-//            final Crime crime = (Crime) marker.getTag();
-//            DatabaseHelper.deleteCrime(crime.getId());
-//            marker.remove();
-        }
+    public void doNegativeClick(int crimeId) {
+        visibleCrimesMap.remove(crimeId);
+        crimeMarkersMap.get(crimeId).remove();
+        crimeMarkersMap.remove(crimeId);
+        DatabaseHelper.deleteCrime(crimeId);
     }
 
 }

@@ -16,16 +16,19 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.activity.CrimeMapActivity;
+import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.CrimeTypes;
-import com.example.crimemappingapp.utils.DatabaseHelper;
+import com.example.crimemappingapp.utils.DateUtils;
 import com.example.crimemappingapp.utils.PlaceDetailsJSONParser;
 import com.example.crimemappingapp.utils.PlaceJSONParser;
+import com.google.android.gms.maps.model.Marker;
 
 import org.json.JSONObject;
 
@@ -35,14 +38,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class AddCrimeFragment extends DialogFragment {
+public class EditCrimeFragment extends DialogFragment {
 
     AppCompatAutoCompleteTextView atvPlaces;
 
@@ -55,11 +57,17 @@ public class AddCrimeFragment extends DialogFragment {
     final int PLACES_DETAILS=1;
 
     private HashMap<Integer, String> crimeTypeMap;
+    private Spinner crimeTypeSpinner;
+    private Button dateHappenedSpinner;
 
-    public static AddCrimeFragment newInstance(int title) {
-        AddCrimeFragment frag = new AddCrimeFragment();
+    public static EditCrimeFragment newInstance(int title, Crime crime) {
+        EditCrimeFragment frag = new EditCrimeFragment();
         Bundle args = new Bundle();
         args.putInt("title", title);
+        args.putString("location", crime.getLocation());
+        args.putString("crimeType", crime.getCrimeType().getDisplayName());
+        args.putLong("dateMillis", crime.getDateMillis());
+        args.putInt("crimeId", crime.getId());
         frag.setArguments(args);
         return frag;
     }
@@ -67,10 +75,14 @@ public class AddCrimeFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         int title = getArguments().getInt("title");
+        String location = getArguments().getString("location");
+        String crimeType = getArguments().getString("crimeType");
+        long dateMillis = getArguments().getLong("dateMillis");
+        final int crimeId = getArguments().getInt("crimeId");
 
-        View v = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_crime, null);
+        View v = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_crime, null);
 
-        initView(v);
+        initView(v, location, crimeType, dateMillis);
 
         return new AlertDialog.Builder(getActivity())
                 .setTitle(title)
@@ -78,82 +90,97 @@ public class AddCrimeFragment extends DialogFragment {
                 .setPositiveButton(R.string.alert_dialog_save,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                ((CrimeMapActivity)getActivity()).doPositiveClick();
+                                Crime crime = new Crime();
+                                crime.setId(crimeId);
+                                crime.setCrimeType(CrimeTypes.getCrimeType(crimeTypeSpinner.getSelectedItem().toString()));
+                                crime.setDateMillis(DateUtils.convertToMillis(dateHappenedSpinner.getText().toString()));
+                                ((CrimeMapActivity)getActivity()).doPositiveClick(crime);
                             }
                         }
                 )
-                .setNegativeButton(R.string.alert_dialog_cancel,
+                .setNeutralButton(R.string.alert_dialog_cancel,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                ((CrimeMapActivity)getActivity()).doNegativeClick();
+                                // do nothing
+                            }
+                        }
+                )
+                .setNegativeButton(R.string.alert_dialog_delete,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                ((CrimeMapActivity)getActivity()).doNegativeClick(crimeId);
                             }
                         }
                 )
                 .create();
     }
 
-    private void initView(View v) {
-        // Getting a reference to the AppCompatAutoCompleteTextView
-        atvPlaces = (AppCompatAutoCompleteTextView) v.findViewById(R.id.atv_places);
-        atvPlaces.setThreshold(1);
+    private void initView(View v, String location, String crimeType, long dateMillis) {
+//        // Getting a reference to the AppCompatAutoCompleteTextView
+//        atvPlaces = (AppCompatAutoCompleteTextView) v.findViewById(R.id.atv_places);
+//        atvPlaces.setThreshold(1);
+//
+//
+//        // Adding textchange listener
+//        atvPlaces.addTextChangedListener(new TextWatcher() {
+//
+//            @Override
+//            public void onTextChanged(CharSequence s, int start, int before, int count) {
+//                // Creating a DownloadTask to download Google Places matching "s"
+//                placesDownloadTask = new DownloadTask(PLACES);
+//
+//                // Getting url to the Google Places Autocomplete api
+//                String url = getAutoCompleteUrl(s.toString());
+//
+//                // Start downloading Google Places
+//                // This causes to execute doInBackground() of DownloadTask class
+//                placesDownloadTask.execute(url);
+//            }
+//
+//            @Override
+//            public void beforeTextChanged(CharSequence s, int start, int count,
+//                                          int after) {
+//                // TODO Auto-generated method stub
+//            }
+//
+//            @Override
+//            public void afterTextChanged(Editable s) {
+//                // TODO Auto-generated method stub
+//            }
+//        });
+//
+//        // Setting an item click listener for the AutoCompleteTextView dropdown list
+//        atvPlaces.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> arg0, View arg1, int index,
+//                                    long id) {
+//
+//                ListView lv = (ListView) arg0;
+//                SimpleAdapter adapter = (SimpleAdapter) arg0.getAdapter();
+//
+//                HashMap<String, String> hm = (HashMap<String, String>) adapter.getItem(index);
+//
+//                // Creating a DownloadTask to download Places details of the selected place
+//                placeDetailsDownloadTask = new DownloadTask(PLACES_DETAILS);
+//
+//                // Getting url to the Google Places details api
+//                String url = getPlaceDetailsUrl(hm.get("reference"));
+//
+//                // Start downloading Google Place Details
+//                // This causes to execute doInBackground() of DownloadTask class
+//                placeDetailsDownloadTask.execute(url);
+//
+//            }
+//        });
 
+        EditText locationField = (EditText) v.findViewById(R.id.location_field);
+        locationField.setText(location);
 
-        // Adding textchange listener
-        atvPlaces.addTextChangedListener(new TextWatcher() {
+        dateHappenedSpinner = (Button) v.findViewById(R.id.date_button);
+        dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager(), dateMillis));
+        dateHappenedSpinner.setText(DateUtils.buildDateDisplay(dateMillis));
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Creating a DownloadTask to download Google Places matching "s"
-                placesDownloadTask = new DownloadTask(PLACES);
-
-                // Getting url to the Google Places Autocomplete api
-                String url = getAutoCompleteUrl(s.toString());
-
-                // Start downloading Google Places
-                // This causes to execute doInBackground() of DownloadTask class
-                placesDownloadTask.execute(url);
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count,
-                                          int after) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        // Setting an item click listener for the AutoCompleteTextView dropdown list
-        atvPlaces.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int index,
-                                    long id) {
-
-                ListView lv = (ListView) arg0;
-                SimpleAdapter adapter = (SimpleAdapter) arg0.getAdapter();
-
-                HashMap<String, String> hm = (HashMap<String, String>) adapter.getItem(index);
-
-                // Creating a DownloadTask to download Places details of the selected place
-                placeDetailsDownloadTask = new DownloadTask(PLACES_DETAILS);
-
-                // Getting url to the Google Places details api
-                String url = getPlaceDetailsUrl(hm.get("reference"));
-
-                // Start downloading Google Place Details
-                // This causes to execute doInBackground() of DownloadTask class
-                placeDetailsDownloadTask.execute(url);
-
-            }
-        });
-
-        Button dateHappenedSpinner = (Button) v.findViewById(R.id.date_button);
-        dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
-
-        Spinner crimeTypeSpinner = (Spinner) v.findViewById(R.id.crime_type_spinner);
+        crimeTypeSpinner = (Spinner) v.findViewById(R.id.crime_type_spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);

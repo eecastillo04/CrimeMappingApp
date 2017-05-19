@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.crimemappingapp.fragment.AddCrimeFragment">
+    tools:context="com.example.crimemappingapp.fragment.EditCrimeFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,19 +16,19 @@
             <!--android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"-->
             <!--/>-->
 
-        <com.example.crimemappingapp.fragment.CustomAutoCompleteTextView
-            android:id="@+id/atv_places"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:hint="@string/location_fragment"
-            android:maxLines="1" />
-
-        <!--<EditText-->
-            <!--android:id="@+id/locationField"-->
+        <!--<com.example.crimemappingapp.fragment.CustomAutoCompleteTextView-->
+            <!--android:id="@+id/atv_places"-->
             <!--android:layout_width="fill_parent"-->
             <!--android:layout_height="wrap_content"-->
-            <!--android:hint="@string/location_fragment" />-->
+            <!--android:layout_alignParentTop="true"-->
+            <!--android:hint="@string/location_fragment"-->
+            <!--android:maxLines="1" />-->
+
+        <EditText
+            android:id="@+id/location_field"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"/>
 
         <Button
             android:id="@+id/date_button"

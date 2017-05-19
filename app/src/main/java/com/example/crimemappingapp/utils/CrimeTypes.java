@@ -47,15 +47,7 @@ public enum CrimeTypes {
     }
 
     public static CrimeTypes getCrimeType(String crimeTypeName) {
-        String aCrimeTypeName = crimeTypeName.toLowerCase();
-        if(ARSON.displayName.toLowerCase().equals(aCrimeTypeName)) return ARSON;
-        if(ASSAULT.displayName.equals(aCrimeTypeName)) return ASSAULT;
-        if(DRUG_RELATED.displayName.equals(aCrimeTypeName)) return DRUG_RELATED;
-        if(MURDER.displayName.equals(aCrimeTypeName)) return MURDER;
-        if(RAPE.displayName.equals(aCrimeTypeName)) return RAPE;
-        if(ROBBERY.displayName.equals(aCrimeTypeName)) return ROBBERY;
-        if(THEFT.displayName.equals(aCrimeTypeName)) return THEFT;
-        return OTHERS;
+        return getCrimeType(getCrimeTypeId(crimeTypeName));
     }
 
     public static String getCrimeTypeName(int id) {
@@ -72,12 +64,12 @@ public enum CrimeTypes {
     public static int getCrimeTypeId(String crimeTypeName) {
         String aCrimeTypeName = crimeTypeName.toLowerCase();
         if(ARSON.displayName.toLowerCase().equals(aCrimeTypeName)) return ARSON.id;
-        if(ASSAULT.displayName.equals(aCrimeTypeName)) return ASSAULT.id;
-        if(DRUG_RELATED.displayName.equals(aCrimeTypeName)) return DRUG_RELATED.id;
-        if(MURDER.displayName.equals(aCrimeTypeName)) return MURDER.id;
-        if(RAPE.displayName.equals(aCrimeTypeName)) return RAPE.id;
-        if(ROBBERY.displayName.equals(aCrimeTypeName)) return ROBBERY.id;
-        if(THEFT.displayName.equals(aCrimeTypeName)) return THEFT.id;
+        if(ASSAULT.displayName.toLowerCase().equals(aCrimeTypeName)) return ASSAULT.id;
+        if(DRUG_RELATED.displayName.toLowerCase().equals(aCrimeTypeName)) return DRUG_RELATED.id;
+        if(MURDER.displayName.toLowerCase().equals(aCrimeTypeName)) return MURDER.id;
+        if(RAPE.displayName.toLowerCase().equals(aCrimeTypeName)) return RAPE.id;
+        if(ROBBERY.displayName.toLowerCase().equals(aCrimeTypeName)) return ROBBERY.id;
+        if(THEFT.displayName.toLowerCase().equals(aCrimeTypeName)) return THEFT.id;
         return OTHERS.id;
     }
 
