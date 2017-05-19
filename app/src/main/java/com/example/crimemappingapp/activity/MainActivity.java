@@ -32,12 +32,6 @@ public class MainActivity extends AppCompatActivity {
     private void initDB() {
         DatabaseHelper.createInstance(getApplicationContext());
         initializeAdmin();
-        initializeCrimeTypes();
-        cacheCrimeTypeMap();
-    }
-
-    private void cacheCrimeTypeMap() {
-        CrimeMappingUtils.setCrimeTypeMap(DatabaseHelper.retrieveAllCrimeTypes());
     }
 
     public void openAdminLoginActivity(View view) {
@@ -55,16 +49,5 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeAdmin() {
         DatabaseHelper.insertAdmin("admin", "password");
-    }
-
-    private void initializeCrimeTypes() {
-        DatabaseHelper.insertCrimeType("Arson");
-        DatabaseHelper.insertCrimeType("Assault");
-        DatabaseHelper.insertCrimeType("Drug Related");
-        DatabaseHelper.insertCrimeType("Murder");
-        DatabaseHelper.insertCrimeType("Rape");
-        DatabaseHelper.insertCrimeType("Robbery");
-        DatabaseHelper.insertCrimeType("Theft");
-        DatabaseHelper.insertCrimeType("Others");
     }
 }

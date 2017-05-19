@@ -20,4 +20,6 @@
     <string name="alert_dialog_save">Save</string>
     <string name="alert_dialog_cancel">Cancel</string>
     <string name="alert_dialog_add_crime">Add Crime</string>
+    <string name="alert_dialog_edit_crime">Edit Crime</string>
+    <string name="alert_dialog_delete">Delete</string>
 </resources>

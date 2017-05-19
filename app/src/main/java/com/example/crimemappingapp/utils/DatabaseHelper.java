@@ -22,10 +22,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_ID + " integer primary key autoincrement, "
                 + COLUMN_USERNAME + " text not null unique, "
                 + COLUMN_PASSWORD + " text not null);"),
-        CRIME_TYPE(TABLE_CRIME_TYPE, "create table "
-                + TABLE_CRIME_TYPE + "("
-                + COLUMN_ID + " integer primary key autoincrement, "
-                + COLUMN_CRIME_NAME + " text not null);"),
         CRIME(TABLE_CRIME, "create table "
                 + TABLE_CRIME + "("
                 + COLUMN_ID + " integer primary key autoincrement, "
@@ -33,10 +29,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_LATITUDE + " text not null, "
                 + COLUMN_LONGITUDE + " text not null, "
                 + COLUMN_DATE + " long not null, "
-                + COLUMN_CRIME_TYPE_ID + " text, "
-                + " FOREIGN KEY (" + COLUMN_CRIME_TYPE_ID + ")"
-                + " REFERENCES " + CRIME_TYPE.getTableName()
-                + "(" + COLUMN_ID + "));");
+                + COLUMN_CRIME_TYPE_ID + " text not null);");
 
         private final String tableName;
         private final String createTableSQL;
@@ -60,9 +53,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_ADMIN = "admin";
     public static final String COLUMN_USERNAME = "username";
     public static final String COLUMN_PASSWORD = "password";
-
-    public static final String TABLE_CRIME_TYPE = "crime_type";
-    public static final String COLUMN_CRIME_NAME = "crime_name";
 
     public static final String TABLE_CRIME = "crime";
     public static final String COLUMN_CRIME_TYPE_ID = "crime_type_id";
@@ -98,22 +88,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         for(DATABASE_TABLE dbTable: DATABASE_TABLE.values()) {
             db.execSQL("DROP TABLE IF EXISTS " + dbTable.getTableName());
         }
-    }
-
-    public static void insertCrimeType(String crimeName) {
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_CRIME_NAME, crimeName);
-
-        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), COLUMN_CRIME_NAME);
-
-        Cursor cursor = getDatabase().rawQuery(selectString, new String[] {crimeName});
-
-        boolean crimeTypeExists = cursor.moveToFirst();
-        if(!crimeTypeExists) {
-            getDatabase(true).insert(DATABASE_TABLE.CRIME_TYPE.getTableName(), null, values);
-        }
-
-        closeDatabase(cursor);
     }
 
     public static void insertAdmin(String username, String password) {
@@ -156,7 +130,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(COLUMN_LATITUDE, latLng.latitude);
             values.put(COLUMN_LONGITUDE, latLng.longitude);
             values.put(COLUMN_DATE, crime.getDateMillis());
-            values.put(COLUMN_CRIME_TYPE_ID, crime.getCrimeTypeId());
+            values.put(COLUMN_CRIME_TYPE_ID, crime.getCrimeType().getId());
 
             database.insert(DATABASE_TABLE.CRIME.getTableName(), null, values);
         }
@@ -182,26 +156,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static Crime buildCrime(Cursor cursor) {
         Crime crime = new Crime();
+        crime.setId(cursor.getInt(0));
         crime.setLocation(cursor.getString(1));
         crime.setLatLng(new LatLng(Double.valueOf(cursor.getString(2)), Double.valueOf(cursor.getString(3))));
         crime.setDateMillis(cursor.getLong(4));
-        crime.setCrimeTypeId(cursor.getInt(5));
+        crime.setCrimeType(CrimeTypes.getCrimeType(cursor.getInt(5)));
         return crime;
     }
 
-    public static HashMap<Integer, String> retrieveAllCrimeTypes() {
-        HashMap<Integer, String> crimeTypeMap = new HashMap<>();
+    public static void updateCrime(int crimeId, int crimeTypeId, long dateMillis) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_DATE, dateMillis);
+        values.put(COLUMN_CRIME_TYPE_ID, crimeTypeId);
+        getDatabase(true).update(DATABASE_TABLE.CRIME.getTableName(), values, COLUMN_ID + " = ?" , new String[] {String.valueOf(crimeId)});
+        closeDatabase();
+    }
 
-        String selectString = buildSelectStatement(DATABASE_TABLE.CRIME_TYPE.getTableName(), new String[]{});
-
-        Cursor cursor = getDatabase().rawQuery(selectString, null);
-        if (cursor.moveToFirst()) {
-            crimeTypeMap.put(cursor.getInt(0), cursor.getString(1));
-            while(cursor.moveToNext()) {
-                crimeTypeMap.put(cursor.getInt(0), cursor.getString(1));
-            }
-        }
-        return crimeTypeMap;
+    public static void deleteCrime(int crimeId) {
+        getDatabase(true).delete(DATABASE_TABLE.CRIME.getTableName(), COLUMN_ID + " = ?" , new String[] {String.valueOf(crimeId)});
+        closeDatabase();
     }
 
     private static String buildSelectStatement(String tableName, String ... columnNames) {

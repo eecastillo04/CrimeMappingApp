@@ -36,6 +36,10 @@ public class DatePickerFragment extends DialogFragment implements DatePickerDial
     }
 
     public static View.OnClickListener createDatePickerOnClickListener(final FragmentManager fragmentManager) {
+        return createDatePickerOnClickListener(fragmentManager, null);
+    }
+
+    public static View.OnClickListener createDatePickerOnClickListener(final FragmentManager fragmentManager, Long dateMillis) {
         return new View.OnClickListener() {
             @SuppressLint("ValidFragment")
             @Override

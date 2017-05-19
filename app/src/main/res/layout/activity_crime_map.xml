@@ -71,12 +71,6 @@
             android:layout_height="wrap_content"
             android:text="Import" />
 
-        <!--<Button-->
-            <!--android:id="@+id/add_crime_button"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="Add Crime" />-->
-
         <Button
             android:id="@+id/create_graph_button"
             android:layout_width="wrap_content"
@@ -88,6 +82,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Clear Map" />
+
+        <Button
+            android:id="@+id/heatmap_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Heatmap" />
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
