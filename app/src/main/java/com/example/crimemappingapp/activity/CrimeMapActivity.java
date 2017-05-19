@@ -44,6 +44,9 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.TileOverlay;
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,6 +62,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static android.R.id.list;
 
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -84,6 +89,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
     private Map<Integer, Marker> crimeMarkersMap = new HashMap<>();
     private Map<Integer, Crime> visibleCrimesMap = new HashMap<>();
     private boolean isEnabledHeatmap;
+    private HeatmapTileProvider mProvider;
+    private TileOverlay mOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -251,9 +258,20 @@ public class CrimeMapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 if(isEnabledHeatmap) {
-                    
+                    mOverlay.remove();
                 } else {
-                    
+                    List<LatLng> latLngList = new ArrayList<>();
+
+                    for(Crime crime: visibleCrimesMap.values()) {
+                        latLngList.add(crime.getLatLng());
+                    }
+
+                    // Create a heat map tile provider, passing it the latlngs of the police stations.
+                    mProvider = new HeatmapTileProvider.Builder()
+                            .data(latLngList)
+                            .build();
+                    // Add a tile overlay to the map, using the heat map tile provider.
+                    mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
                 }
                 
                 isEnabledHeatmap = !isEnabledHeatmap;
