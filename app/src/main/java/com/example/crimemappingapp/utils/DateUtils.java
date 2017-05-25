@@ -37,4 +37,10 @@ public class DateUtils {
         }
         return 0;
     }
+
+    public static int getYear(long dateMillis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(dateMillis);
+        return calendar.get(Calendar.YEAR);
+    }
 }

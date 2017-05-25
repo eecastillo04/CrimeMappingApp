@@ -16,6 +16,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -25,6 +28,7 @@ import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.fragment.EditCrimeFragment;
 import com.example.crimemappingapp.fragment.CustomInfoWindowAdapter;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
+import com.example.crimemappingapp.fragment.GraphFragment;
 import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.CrimeMappingUtils;
 import com.example.crimemappingapp.utils.CrimeTypes;
@@ -116,11 +120,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
         Button importButton = (Button) findViewById(R.id.import_button);
         importButton.setOnClickListener(createImportOnClickListener());
 
-        Button clearMapButton = (Button) findViewById(R.id.clear_map_button);
-        clearMapButton.setOnClickListener(createClearMapOnClickListener());
-
-        Button heatmapButton = (Button) findViewById(R.id.heatmap_button);
-        heatmapButton.setOnClickListener(createHeatmapOnClickListener());
+        Button createGraphButton = (Button) findViewById(R.id.create_graph_button);
+        createGraphButton.setOnClickListener(createGraphOnClickListener());
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -239,44 +240,54 @@ public class CrimeMapActivity extends AppCompatActivity implements
         };
     }
 
-    private View.OnClickListener createClearMapOnClickListener() {
+    private View.OnClickListener createGraphOnClickListener() {
         return new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for(Marker marker: crimeMarkersMap.values()) {
-                    marker.remove();
-                }
-
-                visibleCrimesMap.clear();
-                crimeMarkersMap.clear();
+                if(visibleCrimesMap.isEmpty()) return;
+                DialogFragment newFragment = GraphFragment.newInstance(R.string.alert_dialog_graph, visibleCrimesMap.values());
+                newFragment.show(getFragmentManager(), "createGraph");
             }
         };
     }
 
-    private View.OnClickListener createHeatmapOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(isEnabledHeatmap) {
-                    mOverlay.remove();
-                } else {
-                    List<LatLng> latLngList = new ArrayList<>();
+    private void clearMap() {
+        for(Marker marker: crimeMarkersMap.values()) {
+            marker.remove();
+        }
 
-                    for(Crime crime: visibleCrimesMap.values()) {
-                        latLngList.add(crime.getLatLng());
-                    }
+        visibleCrimesMap.clear();
+        crimeMarkersMap.clear();
+    }
 
-                    // Create a heat map tile provider, passing it the latlngs of the police stations.
-                    mProvider = new HeatmapTileProvider.Builder()
-                            .data(latLngList)
-                            .build();
-                    // Add a tile overlay to the map, using the heat map tile provider.
-                    mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
-                }
-                
-                isEnabledHeatmap = !isEnabledHeatmap;
+    private void toggleHeatmap() {
+        if(isEnabledHeatmap) {
+            mOverlay.remove();
+
+            for(Marker marker: crimeMarkersMap.values()) {
+                Crime crime = (Crime) marker.getTag();
+                mMap.addMarker(createMarkerOptions(crime));
             }
-        };
+        } else {
+            List<LatLng> latLngList = new ArrayList<>();
+
+            for(Crime crime: visibleCrimesMap.values()) {
+                latLngList.add(crime.getLatLng());
+            }
+
+            // Create a heat map tile provider, passing it the latlngs of the police stations.
+            mProvider = new HeatmapTileProvider.Builder()
+                    .data(latLngList)
+                    .build();
+            // Add a tile overlay to the map, using the heat map tile provider.
+            mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+
+            for(Marker marker: crimeMarkersMap.values()) {
+                marker.remove();
+            }
+        }
+
+        isEnabledHeatmap = !isEnabledHeatmap;
     }
 
     private View.OnClickListener createImportOnClickListener() {
@@ -293,16 +304,20 @@ public class CrimeMapActivity extends AppCompatActivity implements
             int crimeId = crime.getId();
             if(visibleCrimesMap.containsKey(crimeId)) continue;
 
-            MarkerOptions options = new MarkerOptions();
-            options.position(crime.getLatLng());
-            options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
-
-            Marker marker = mMap.addMarker(options);
+            Marker marker = mMap.addMarker(createMarkerOptions(crime));
             marker.setTag(crime);
 
             visibleCrimesMap.put(crimeId, crime);
             crimeMarkersMap.put(crimeId, marker);
         }
+    }
+
+    private MarkerOptions createMarkerOptions(Crime crime) {
+        MarkerOptions options = new MarkerOptions();
+        options.position(crime.getLatLng());
+        options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
+
+        return options;
     }
 
     // method definition
@@ -531,4 +546,24 @@ public class CrimeMapActivity extends AppCompatActivity implements
         DatabaseHelper.deleteCrime(crimeId);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.crime_map_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.clear_map_button:
+                clearMap();
+                return true;
+            case R.id.heatmap_button:
+                toggleHeatmap();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 }
