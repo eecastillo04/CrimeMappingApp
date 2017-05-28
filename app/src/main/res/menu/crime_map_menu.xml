@@ -15,4 +15,7 @@
     <item
         android:id="@+id/heatmap_button"
         android:title="Toggle Heatmap" />
+    <item
+        android:id="@+id/show_shortest_path_button"
+        android:title="Show Shortest Path" />
 </menu>
