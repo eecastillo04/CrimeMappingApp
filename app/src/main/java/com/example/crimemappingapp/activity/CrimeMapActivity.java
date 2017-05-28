@@ -303,7 +303,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
         enableShowShortestPath = !enableShowShortestPath;
 
         if(enableShowShortestPath) {
-            Toast.makeText(this.getApplicationContext(), "Tap two locations to show shortest path", Toast.LENGTH_LONG).show();
+            if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
+                Toast.makeText(this.getApplicationContext(), "Tap two locations to show shortest path", Toast.LENGTH_LONG).show();
+            }
         } else {
             if(currPolyline != null) {
                 currPolyline.remove();
