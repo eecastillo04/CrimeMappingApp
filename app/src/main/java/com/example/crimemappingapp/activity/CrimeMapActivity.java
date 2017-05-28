@@ -27,6 +27,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.example.crimemappingapp.R;
+import com.example.crimemappingapp.fragment.AddCrimeFragment;
 import com.example.crimemappingapp.fragment.EditCrimeFragment;
 import com.example.crimemappingapp.fragment.CustomInfoWindowAdapter;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
@@ -249,6 +250,13 @@ public class CrimeMapActivity extends AppCompatActivity implements
         markCrimesOnMap(crimeList);
     }
 
+    private void addCrime() {
+        if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
+            DialogFragment newFragment = AddCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
+            newFragment.show(getFragmentManager(), "addCrime");
+        }
+    }
+
     private void createGraph() {
         if(visibleCrimesMap.isEmpty()) {
             Toast.makeText(this.getApplicationContext(), "No visible crimes on the map yet", Toast.LENGTH_SHORT).show();
@@ -458,6 +466,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
             DatabaseHelper.insertCrimeList(importCrimeList);
 
+            importCrimeList.clear();
+
             return null;
         }
     }
@@ -567,7 +577,15 @@ public class CrimeMapActivity extends AppCompatActivity implements
         return p1;
     }
 
-    public void doPositiveClick(Crime crime) {
+    public void doAddCrime(Crime crime) {
+        FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
+        latLngFetcherList.add(latLngFetcher);
+        latLngFetcher.execute();
+
+        new ImportParsedCrimesToDB().execute();
+    }
+
+    public void doSaveEditCrime(Crime crime) {
         DatabaseHelper.updateCrime(crime.getId(), crime.getCrimeType().getId(), crime.getDateMillis());
         resetMarkers();
 
@@ -576,7 +594,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
         }
     }
 
-    public void doNegativeClick(int crimeId) {
+    public void doDeleteCrime(int crimeId) {
         visibleCrimesMap.remove(crimeId);
         crimeMarkersMap.get(crimeId).remove();
         crimeMarkersMap.remove(crimeId);
@@ -595,6 +613,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
         switch (item.getItemId()) {
             case R.id.import_button:
                 performFileSearch();
+                return true;
+            case R.id.add_crime_button:
+                addCrime();
                 return true;
             case R.id.create_graph_button:
                 createGraph();

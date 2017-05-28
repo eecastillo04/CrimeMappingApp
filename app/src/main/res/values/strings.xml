@@ -17,6 +17,7 @@
     </string>
 
     <string name="location_fragment">Location</string>
+    <string name="alert_dialog_add">Add</string>
     <string name="alert_dialog_save">Save</string>
     <string name="alert_dialog_cancel">Cancel</string>
     <string name="alert_dialog_add_crime">Add Crime</string>

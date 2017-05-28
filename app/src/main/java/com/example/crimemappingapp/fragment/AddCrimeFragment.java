@@ -1,5 +1,6 @@
 package com.example.crimemappingapp.fragment;
 
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,22 +21,21 @@ import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DateUtils;
 
+import java.util.Date;
+
 /**
  * A simple {@link Fragment} subclass.
  */
-public class EditCrimeFragment extends DialogFragment {
+public class AddCrimeFragment extends DialogFragment {
 
     private Spinner crimeTypeSpinner;
     private Button dateHappenedSpinner;
+    private EditText locationField;
 
-    public static EditCrimeFragment newInstance(int title, Crime crime) {
-        EditCrimeFragment frag = new EditCrimeFragment();
+    public static AddCrimeFragment newInstance(int title) {
+        AddCrimeFragment frag = new AddCrimeFragment();
         Bundle args = new Bundle();
         args.putInt("title", title);
-        args.putString("location", crime.getLocation());
-        args.putString("crimeType", crime.getCrimeType().getDisplayName());
-        args.putLong("dateMillis", crime.getDateMillis());
-        args.putInt("crimeId", crime.getId());
         frag.setArguments(args);
         return frag;
     }
@@ -42,26 +43,22 @@ public class EditCrimeFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         int title = getArguments().getInt("title");
-        String location = getArguments().getString("location");
-        String crimeType = getArguments().getString("crimeType");
-        long dateMillis = getArguments().getLong("dateMillis");
-        final int crimeId = getArguments().getInt("crimeId");
 
-        View v = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_crime, null);
+        View v = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_crime, null);
 
-        initView(v, location, crimeType, dateMillis);
+        initView(v);
 
         return new AlertDialog.Builder(getActivity())
                 .setTitle(title)
                 .setView(v)
-                .setPositiveButton(R.string.alert_dialog_save,
+                .setPositiveButton(R.string.alert_dialog_add,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 Crime crime = new Crime();
-                                crime.setId(crimeId);
+                                crime.setLocation(locationField.getText().toString());
                                 crime.setCrimeType(CrimeTypes.getCrimeType(crimeTypeSpinner.getSelectedItem().toString()));
                                 crime.setDateMillis(DateUtils.convertToMillis(dateHappenedSpinner.getText().toString()));
-                                ((CrimeMapActivity)getActivity()).doSaveEditCrime(crime);
+                                ((CrimeMapActivity)getActivity()).doAddCrime(crime);
                             }
                         }
                 )
@@ -72,29 +69,21 @@ public class EditCrimeFragment extends DialogFragment {
                             }
                         }
                 )
-                .setNegativeButton(R.string.alert_dialog_delete,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                ((CrimeMapActivity)getActivity()).doDeleteCrime(crimeId);
-                            }
-                        }
-                )
                 .create();
     }
 
-    private void initView(View v, String location, String crimeType, long dateMillis) {
-        EditText locationField = (EditText) v.findViewById(R.id.location_field);
-        locationField.setText(location);
+    private void initView(View v) {
+        locationField = (EditText) v.findViewById(R.id.location_field);
 
         dateHappenedSpinner = (Button) v.findViewById(R.id.date_button);
-        dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager(), dateMillis));
-        dateHappenedSpinner.setText(DateUtils.buildDateDisplay(dateMillis));
+        long currDateTime = new Date().getTime();
+        dateHappenedSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager(), currDateTime));
+        dateHappenedSpinner.setText(DateUtils.buildDateDisplay(currDateTime));
 
         crimeTypeSpinner = (Spinner) v.findViewById(R.id.crime_type_spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
-        crimeTypeSpinner.setSelection(CrimeTypes.getCrimeTypeId(crimeType));
     }
 
 }

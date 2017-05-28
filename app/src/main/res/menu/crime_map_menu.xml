@@ -4,6 +4,9 @@
         android:id="@+id/import_button"
         android:title="Import" />
     <item
+        android:id="@+id/add_crime_button"
+        android:title="Add Crime" />
+    <item
         android:id="@+id/create_graph_button"
         android:title="Create Graph" />
     <item
