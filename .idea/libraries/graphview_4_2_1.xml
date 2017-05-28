@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="graphview-4.2.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.android/build-cache/9b8be9ad5497412f4029ed5bb5e220a7bb4b35ab/output/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.android/build-cache/9b8be9ad5497412f4029ed5bb5e220a7bb4b35ab/output/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.jjoe64/graphview/4.2.1/2df8276ca3f3c55f21dece90248cfb3d089ea0c1/graphview-4.2.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

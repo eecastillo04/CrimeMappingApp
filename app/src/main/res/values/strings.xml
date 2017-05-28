@@ -17,9 +17,15 @@
     </string>
 
     <string name="location_fragment">Location</string>
+    <string name="alert_dialog_add">Add</string>
     <string name="alert_dialog_save">Save</string>
     <string name="alert_dialog_cancel">Cancel</string>
     <string name="alert_dialog_add_crime">Add Crime</string>
     <string name="alert_dialog_edit_crime">Edit Crime</string>
     <string name="alert_dialog_delete">Delete</string>
+    <string name="alert_dialog_graph">Graph</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="alert_dialog_ok">Okay</string>
 </resources>

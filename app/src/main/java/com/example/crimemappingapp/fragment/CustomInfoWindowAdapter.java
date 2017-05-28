@@ -4,6 +4,7 @@ import android.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.activity.CrimeMapActivity;
@@ -12,10 +13,6 @@ import com.example.crimemappingapp.utils.CrimeMappingUtils;
 import com.example.crimemappingapp.utils.DateUtils;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
-
-/**
- * Created by klanezurbano on 18/05/2017.
- */
 
 public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter, GoogleMap.OnInfoWindowClickListener  {
     private final CrimeMapActivity activity;
@@ -59,11 +56,7 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter, Goo
         if(!isAdmin || obj == null) return;
 
         Crime crime = (Crime) obj;
-        if(CrimeMappingUtils.haveNetworkConnection(this.activity.getBaseContext())) {
-            DialogFragment newFragment = EditCrimeFragment.newInstance(R.string.alert_dialog_edit_crime, crime);
-            newFragment.show(this.activity.getFragmentManager(), "editCrime");
-        } else {
-            // TODO alert that needs internet connection
-        }
+        DialogFragment newFragment = EditCrimeFragment.newInstance(R.string.alert_dialog_edit_crime, crime);
+        newFragment.show(this.activity.getFragmentManager(), "editCrime");
     }
 }

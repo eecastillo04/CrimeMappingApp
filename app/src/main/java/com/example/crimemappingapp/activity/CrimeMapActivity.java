@@ -2,6 +2,7 @@ package com.example.crimemappingapp.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Application;
 import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,20 +17,29 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.example.crimemappingapp.R;
+import com.example.crimemappingapp.fragment.AddCrimeFragment;
 import com.example.crimemappingapp.fragment.EditCrimeFragment;
 import com.example.crimemappingapp.fragment.CustomInfoWindowAdapter;
 import com.example.crimemappingapp.fragment.DatePickerFragment;
+import com.example.crimemappingapp.fragment.GraphFragment;
 import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.CrimeMappingUtils;
+import com.example.crimemappingapp.utils.CrimeSearch;
 import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
+import com.example.crimemappingapp.utils.DirectionsJSONParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -44,6 +54,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
@@ -67,7 +79,8 @@ import static android.R.id.list;
 
 public class CrimeMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener,
+        GoogleMap.OnMapClickListener {
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -92,6 +105,12 @@ public class CrimeMapActivity extends AppCompatActivity implements
     private HeatmapTileProvider mProvider;
     private TileOverlay mOverlay;
 
+    private List<CrimeSearch> crimeSearchList = new ArrayList<>();
+
+    private List<LatLng> shortestPathLatLng = new ArrayList<>();
+    private boolean enableShowShortestPath;
+    private Polyline currPolyline;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,18 +128,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         toYearSpinner = (Button) findViewById(R.id.to_date_button);
         toYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
-        
+
         Button searchButton = (Button) findViewById(R.id.search_button);
         searchButton.setOnClickListener(createSearchCrimesOnClickListener());
-
-        Button importButton = (Button) findViewById(R.id.import_button);
-        importButton.setOnClickListener(createImportOnClickListener());
-
-        Button clearMapButton = (Button) findViewById(R.id.clear_map_button);
-        clearMapButton.setOnClickListener(createClearMapOnClickListener());
-
-        Button heatmapButton = (Button) findViewById(R.id.heatmap_button);
-        heatmapButton.setOnClickListener(createHeatmapOnClickListener());
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -218,6 +228,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
         CustomInfoWindowAdapter infoWindowAdapter = new CustomInfoWindowAdapter(this, isAdmin);
         mMap.setInfoWindowAdapter(infoWindowAdapter);
         mMap.setOnInfoWindowClickListener(infoWindowAdapter);
+        mMap.setOnMapClickListener(this);
         mGoogleApiClient.connect();
     }
 
@@ -226,66 +237,129 @@ public class CrimeMapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 try {
-                    List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
+                    CrimeSearch crimeSearch = new CrimeSearch(
                             CrimeTypes.getCrimeTypeId(crimeTypeSpinner.getSelectedItem().toString()),
                             DateUtils.convertToMillis(fromYearSpinner.getText().toString()),
-                            DateUtils.convertToMillis(toYearSpinner.getText().toString())
-                    );
-                    markCrimesOnMap(crimeList);
+                            DateUtils.convertToMillis(toYearSpinner.getText().toString()));
+                    crimeSearchList.add(crimeSearch);
+
+                    markCrimeSearch(crimeSearch);
                 } catch(Exception e) {
-                    // TODO alert check input requirements for searching
+                    Toast.makeText(v.getContext(), "Please check input requirements for searching", Toast.LENGTH_SHORT).show();
                 }
             }
         };
     }
 
-    private View.OnClickListener createClearMapOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for(Marker marker: crimeMarkersMap.values()) {
-                    marker.remove();
-                }
-
-                visibleCrimesMap.clear();
-                crimeMarkersMap.clear();
-            }
-        };
+    private void markCrimeSearch(CrimeSearch crimeSearch) {
+        List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
+                crimeSearch.getCrimeTypeId(),
+                crimeSearch.getFrom(),
+                crimeSearch.getTo()
+        );
+        markCrimesOnMap(crimeList);
     }
 
-    private View.OnClickListener createHeatmapOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(isEnabledHeatmap) {
+    private void addCrime() {
+        if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
+            DialogFragment newFragment = AddCrimeFragment.newInstance(R.string.alert_dialog_add_crime);
+            newFragment.show(getFragmentManager(), "addCrime");
+        }
+    }
+
+    private void createGraph() {
+        if(visibleCrimesMap.isEmpty()) {
+            Toast.makeText(this.getApplicationContext(), "No visible crimes on the map yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        DialogFragment newFragment = GraphFragment.newInstance(R.string.alert_dialog_graph, visibleCrimesMap.values());
+        newFragment.show(getFragmentManager(), "createGraph");
+    }
+
+    private void clearMap() {
+        crimeSearchList.clear();
+
+        resetMarkers();
+    }
+
+    private void resetMarkers() {
+        for(Marker marker: crimeMarkersMap.values()) {
+            marker.remove();
+        }
+
+        visibleCrimesMap.clear();
+        crimeMarkersMap.clear();
+
+        updateMap();
+    }
+
+    private void toggleHeatmap() {
+        isEnabledHeatmap = !isEnabledHeatmap;
+
+        updateMap(true);
+    }
+
+    private void pinLocations() {
+        enableShowShortestPath = !enableShowShortestPath;
+
+        if(enableShowShortestPath) {
+            if(CrimeMappingUtils.haveNetworkConnection(getBaseContext())) {
+                Toast.makeText(this.getApplicationContext(), "Tap two locations to show shortest path", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            if(currPolyline != null) {
+                currPolyline.remove();
+            }
+            Toast.makeText(this.getApplicationContext(), "Disabled show shortest path mode", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateMap() {
+        updateMap(false);
+    }
+
+    private void updateMap(boolean showToast) {
+        if(!isEnabledHeatmap) {
+            if(mOverlay != null) {
+                mOverlay.remove();
+            }
+
+            for(Marker marker: crimeMarkersMap.values()) {
+                marker.setVisible(true);
+            }
+
+            if(showToast) {
+                Toast.makeText(this.getApplicationContext(), "Disabled Heatmap", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            List<LatLng> latLngList = new ArrayList<>();
+
+            for(Crime crime: visibleCrimesMap.values()) {
+                latLngList.add(crime.getLatLng());
+            }
+
+            if(!latLngList.isEmpty()) {
+                // Create a heat map tile provider, passing it the latlngs of the police stations.
+                mProvider = new HeatmapTileProvider.Builder()
+                        .data(latLngList)
+                        .build();
+
+                // Add a tile overlay to the map, using the heat map tile provider.
+                mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+            } else {
+                if(mOverlay != null) {
                     mOverlay.remove();
-                } else {
-                    List<LatLng> latLngList = new ArrayList<>();
-
-                    for(Crime crime: visibleCrimesMap.values()) {
-                        latLngList.add(crime.getLatLng());
-                    }
-
-                    // Create a heat map tile provider, passing it the latlngs of the police stations.
-                    mProvider = new HeatmapTileProvider.Builder()
-                            .data(latLngList)
-                            .build();
-                    // Add a tile overlay to the map, using the heat map tile provider.
-                    mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
                 }
-                
-                isEnabledHeatmap = !isEnabledHeatmap;
             }
-        };
-    }
 
-    private View.OnClickListener createImportOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                performFileSearch();
+            for(Marker marker: crimeMarkersMap.values()) {
+                marker.setVisible(false);
             }
-        };
+
+            if(showToast) {
+                Toast.makeText(this.getApplicationContext(), "Enabled Heatmap", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void markCrimesOnMap(List<Crime> crimeList) {
@@ -293,16 +367,22 @@ public class CrimeMapActivity extends AppCompatActivity implements
             int crimeId = crime.getId();
             if(visibleCrimesMap.containsKey(crimeId)) continue;
 
-            MarkerOptions options = new MarkerOptions();
-            options.position(crime.getLatLng());
-            options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
-
-            Marker marker = mMap.addMarker(options);
+            Marker marker = mMap.addMarker(createMarkerOptions(crime));
             marker.setTag(crime);
 
             visibleCrimesMap.put(crimeId, crime);
             crimeMarkersMap.put(crimeId, marker);
+
+            updateMap();
         }
+    }
+
+    private MarkerOptions createMarkerOptions(Crime crime) {
+        MarkerOptions options = new MarkerOptions();
+        options.position(crime.getLatLng());
+        options.icon(getMarkerIcon(crime.getCrimeType().getHexColor()));
+
+        return options;
     }
 
     // method definition
@@ -356,7 +436,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
                         parseCrimes(crimeDataString);
                         new ImportParsedCrimesToDB().execute();
                     } else {
-                        // TODO alert that internet connection is required
+                        Toast.makeText(this.getApplicationContext(), "Internet connection is required", Toast.LENGTH_LONG).show();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -403,6 +483,186 @@ public class CrimeMapActivity extends AppCompatActivity implements
         return crimeList;
     }
 
+    @Override
+    public void onMapClick(LatLng latLng) {
+        if(!enableShowShortestPath) {
+            shortestPathLatLng.clear();
+            return;
+        }
+
+        if(currPolyline != null) {
+            currPolyline.remove();
+        }
+
+        if(shortestPathLatLng.isEmpty()) {
+            shortestPathLatLng.add(latLng);
+        } else {
+            shortestPathLatLng.add(latLng);
+
+            // Getting URL to the Google Directions API
+            String url = getDirectionsUrl(shortestPathLatLng.get(0), shortestPathLatLng.get(1));
+
+            DirectionDownloadTask directionDownloadTask = new DirectionDownloadTask();
+
+            // Start downloading json data from Google Directions API
+            directionDownloadTask.execute(url);
+
+            shortestPathLatLng.clear();
+        }
+    }
+
+    private String getDirectionsUrl(LatLng origin, LatLng dest) {
+
+        // Origin of route
+        String str_origin = "origin="+origin.latitude+","+origin.longitude;
+
+        // Destination of route
+        String str_dest = "destination="+dest.latitude+","+dest.longitude;
+
+        // Sensor enabled
+        String sensor = "sensor=false";
+
+        // Building the parameters to the web service
+        String parameters = str_origin+"&"+str_dest+"&"+sensor;
+
+        // Output format
+        String output = "json";
+
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
+
+        return url;
+    }
+
+    // Fetches data from url passed
+    private class DirectionDownloadTask extends AsyncTask<String, Void, String>{
+
+        // Downloading data in non-ui thread
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try{
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+            }catch(Exception e){
+                Log.d("Background Task",e.toString());
+            }
+            return data;
+        }
+
+        // Executes in UI thread, after the execution of
+        // doInBackground()
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            DirectionParserTask parserTask = new DirectionParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+        }
+    }
+
+    /** A method to download json data from url */
+    private String downloadUrl(String strUrl) throws IOException{
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try{
+            URL url = new URL(strUrl);
+
+            // Creating an http connection to communicate with url
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while( ( line = br.readLine()) != null){
+                sb.append(line);
+            }
+
+            data = sb.toString();
+
+            br.close();
+
+        }catch(Exception e){
+            Log.d("Exception while downloading url", e.toString());
+        }finally{
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
+    /** A class to parse the Google Places in JSON format */
+    private class DirectionParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>> >{
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try{
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        // Executes in UI thread, after the parsing process
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = null;
+            MarkerOptions markerOptions = new MarkerOptions();
+
+            // Traversing through all the routes
+            for(int i=0;i<result.size();i++){
+                points = new ArrayList<LatLng>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for(int j=0;j<path.size();j++){
+                    HashMap<String,String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(2);
+                lineOptions.color(Color.RED);
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            currPolyline = mMap.addPolyline(lineOptions);
+        }
+    }
+
     public class ImportParsedCrimesToDB extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... params) {
@@ -410,6 +670,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
             while(!latLngFetcherList.isEmpty());
 
             DatabaseHelper.insertCrimeList(importCrimeList);
+
+            importCrimeList.clear();
 
             return null;
         }
@@ -520,15 +782,60 @@ public class CrimeMapActivity extends AppCompatActivity implements
         return p1;
     }
 
-    public void doPositiveClick(Crime crime) {
-        DatabaseHelper.updateCrime(crime.getId(), crime.getCrimeType().getId(), crime.getDateMillis());
+    public void doAddCrime(Crime crime) {
+        FetchLatLongFromService latLngFetcher = new FetchLatLongFromService(crime);
+        latLngFetcherList.add(latLngFetcher);
+        latLngFetcher.execute();
+
+        new ImportParsedCrimesToDB().execute();
     }
 
-    public void doNegativeClick(int crimeId) {
+    public void doSaveEditCrime(Crime crime) {
+        DatabaseHelper.updateCrime(crime.getId(), crime.getCrimeType().getId(), crime.getDateMillis());
+        resetMarkers();
+
+        for(CrimeSearch crimeSearch: crimeSearchList) {
+            markCrimeSearch(crimeSearch);
+        }
+    }
+
+    public void doDeleteCrime(int crimeId) {
         visibleCrimesMap.remove(crimeId);
         crimeMarkersMap.get(crimeId).remove();
         crimeMarkersMap.remove(crimeId);
         DatabaseHelper.deleteCrime(crimeId);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.crime_map_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.import_button:
+                performFileSearch();
+                return true;
+            case R.id.add_crime_button:
+                addCrime();
+                return true;
+            case R.id.create_graph_button:
+                createGraph();
+                return true;
+            case R.id.clear_map_button:
+                clearMap();
+                return true;
+            case R.id.heatmap_button:
+                toggleHeatmap();
+                return true;
+            case R.id.show_shortest_path_button:
+                pinLocations();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 }
