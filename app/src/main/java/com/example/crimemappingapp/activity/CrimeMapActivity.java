@@ -2,6 +2,7 @@ package com.example.crimemappingapp.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Application;
 import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,6 +24,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.example.crimemappingapp.R;
 import com.example.crimemappingapp.fragment.EditCrimeFragment;
@@ -113,15 +115,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         toYearSpinner = (Button) findViewById(R.id.to_date_button);
         toYearSpinner.setOnClickListener(DatePickerFragment.createDatePickerOnClickListener(getFragmentManager()));
-        
+
         Button searchButton = (Button) findViewById(R.id.search_button);
         searchButton.setOnClickListener(createSearchCrimesOnClickListener());
-
-        Button importButton = (Button) findViewById(R.id.import_button);
-        importButton.setOnClickListener(createImportOnClickListener());
-
-        Button createGraphButton = (Button) findViewById(R.id.create_graph_button);
-        createGraphButton.setOnClickListener(createGraphOnClickListener());
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -234,21 +230,19 @@ public class CrimeMapActivity extends AppCompatActivity implements
                     );
                     markCrimesOnMap(crimeList);
                 } catch(Exception e) {
-                    // TODO alert check input requirements for searching
+                    Toast.makeText(v.getContext(), "Please check input requirements for searching", Toast.LENGTH_SHORT).show();
                 }
             }
         };
     }
 
-    private View.OnClickListener createGraphOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(visibleCrimesMap.isEmpty()) return;
-                DialogFragment newFragment = GraphFragment.newInstance(R.string.alert_dialog_graph, visibleCrimesMap.values());
-                newFragment.show(getFragmentManager(), "createGraph");
-            }
-        };
+    private void createGraph() {
+        if(visibleCrimesMap.isEmpty()) {
+            Toast.makeText(this.getApplicationContext(), "No visible crimes on the map yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        DialogFragment newFragment = GraphFragment.newInstance(R.string.alert_dialog_graph, visibleCrimesMap.values());
+        newFragment.show(getFragmentManager(), "createGraph");
     }
 
     private void clearMap() {
@@ -288,15 +282,6 @@ public class CrimeMapActivity extends AppCompatActivity implements
         }
 
         isEnabledHeatmap = !isEnabledHeatmap;
-    }
-
-    private View.OnClickListener createImportOnClickListener() {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                performFileSearch();
-            }
-        };
     }
 
     private void markCrimesOnMap(List<Crime> crimeList) {
@@ -371,7 +356,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
                         parseCrimes(crimeDataString);
                         new ImportParsedCrimesToDB().execute();
                     } else {
-                        // TODO alert that internet connection is required
+                        Toast.makeText(this.getApplicationContext(), "Internet connection is required", Toast.LENGTH_LONG).show();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -556,6 +541,12 @@ public class CrimeMapActivity extends AppCompatActivity implements
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.import_button:
+                performFileSearch();
+                return true;
+            case R.id.create_graph_button:
+                createGraph();
+                return true;
             case R.id.clear_map_button:
                 clearMap();
                 return true;
