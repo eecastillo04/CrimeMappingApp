@@ -252,15 +252,32 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
         visibleCrimesMap.clear();
         crimeMarkersMap.clear();
+
+        updateMap();
     }
 
     private void toggleHeatmap() {
-        if(isEnabledHeatmap) {
-            mOverlay.remove();
+        isEnabledHeatmap = !isEnabledHeatmap;
+
+        updateMap(true);
+    }
+
+    private void updateMap() {
+        updateMap(false);
+    }
+
+    private void updateMap(boolean showToast) {
+        if(!isEnabledHeatmap) {
+            if(mOverlay != null) {
+                mOverlay.remove();
+            }
 
             for(Marker marker: crimeMarkersMap.values()) {
-                Crime crime = (Crime) marker.getTag();
-                mMap.addMarker(createMarkerOptions(crime));
+                marker.setVisible(true);
+            }
+
+            if(showToast) {
+                Toast.makeText(this.getApplicationContext(), "Disabled Heatmap", Toast.LENGTH_SHORT).show();
             }
         } else {
             List<LatLng> latLngList = new ArrayList<>();
@@ -269,19 +286,28 @@ public class CrimeMapActivity extends AppCompatActivity implements
                 latLngList.add(crime.getLatLng());
             }
 
-            // Create a heat map tile provider, passing it the latlngs of the police stations.
-            mProvider = new HeatmapTileProvider.Builder()
-                    .data(latLngList)
-                    .build();
-            // Add a tile overlay to the map, using the heat map tile provider.
-            mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+            if(!latLngList.isEmpty()) {
+                // Create a heat map tile provider, passing it the latlngs of the police stations.
+                mProvider = new HeatmapTileProvider.Builder()
+                        .data(latLngList)
+                        .build();
+
+                // Add a tile overlay to the map, using the heat map tile provider.
+                mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+            } else {
+                if(mOverlay != null) {
+                    mOverlay.remove();
+                }
+            }
 
             for(Marker marker: crimeMarkersMap.values()) {
-                marker.remove();
+                marker.setVisible(false);
+            }
+
+            if(showToast) {
+                Toast.makeText(this.getApplicationContext(), "Enabled Heatmap", Toast.LENGTH_SHORT).show();
             }
         }
-
-        isEnabledHeatmap = !isEnabledHeatmap;
     }
 
     private void markCrimesOnMap(List<Crime> crimeList) {
@@ -294,6 +320,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
             visibleCrimesMap.put(crimeId, crime);
             crimeMarkersMap.put(crimeId, marker);
+
+            updateMap();
         }
     }
 
