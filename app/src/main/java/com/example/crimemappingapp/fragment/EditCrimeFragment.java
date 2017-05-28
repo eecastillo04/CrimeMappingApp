@@ -94,6 +94,7 @@ public class EditCrimeFragment extends DialogFragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, CrimeTypes.getAllDisplayNames());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         crimeTypeSpinner.setAdapter(adapter);
+        crimeTypeSpinner.setSelection(CrimeTypes.getCrimeTypeId(crimeType));
     }
 
 }

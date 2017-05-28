@@ -33,6 +33,7 @@ import com.example.crimemappingapp.fragment.DatePickerFragment;
 import com.example.crimemappingapp.fragment.GraphFragment;
 import com.example.crimemappingapp.utils.Crime;
 import com.example.crimemappingapp.utils.CrimeMappingUtils;
+import com.example.crimemappingapp.utils.CrimeSearch;
 import com.example.crimemappingapp.utils.CrimeTypes;
 import com.example.crimemappingapp.utils.DatabaseHelper;
 import com.example.crimemappingapp.utils.DateUtils;
@@ -97,6 +98,8 @@ public class CrimeMapActivity extends AppCompatActivity implements
     private boolean isEnabledHeatmap;
     private HeatmapTileProvider mProvider;
     private TileOverlay mOverlay;
+
+    private List<CrimeSearch> crimeSearchList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -223,17 +226,27 @@ public class CrimeMapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 try {
-                    List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
+                    CrimeSearch crimeSearch = new CrimeSearch(
                             CrimeTypes.getCrimeTypeId(crimeTypeSpinner.getSelectedItem().toString()),
                             DateUtils.convertToMillis(fromYearSpinner.getText().toString()),
-                            DateUtils.convertToMillis(toYearSpinner.getText().toString())
-                    );
-                    markCrimesOnMap(crimeList);
+                            DateUtils.convertToMillis(toYearSpinner.getText().toString()));
+                    crimeSearchList.add(crimeSearch);
+
+                    markCrimeSearch(crimeSearch);
                 } catch(Exception e) {
                     Toast.makeText(v.getContext(), "Please check input requirements for searching", Toast.LENGTH_SHORT).show();
                 }
             }
         };
+    }
+
+    private void markCrimeSearch(CrimeSearch crimeSearch) {
+        List<Crime> crimeList = DatabaseHelper.retrieveAllCrimes(
+                crimeSearch.getCrimeTypeId(),
+                crimeSearch.getFrom(),
+                crimeSearch.getTo()
+        );
+        markCrimesOnMap(crimeList);
     }
 
     private void createGraph() {
@@ -246,6 +259,12 @@ public class CrimeMapActivity extends AppCompatActivity implements
     }
 
     private void clearMap() {
+        crimeSearchList.clear();
+
+        resetMarkers();
+    }
+
+    private void resetMarkers() {
         for(Marker marker: crimeMarkersMap.values()) {
             marker.remove();
         }
@@ -550,6 +569,11 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     public void doPositiveClick(Crime crime) {
         DatabaseHelper.updateCrime(crime.getId(), crime.getCrimeType().getId(), crime.getDateMillis());
+        resetMarkers();
+
+        for(CrimeSearch crimeSearch: crimeSearchList) {
+            markCrimeSearch(crimeSearch);
+        }
     }
 
     public void doNegativeClick(int crimeId) {
