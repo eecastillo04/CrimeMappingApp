@@ -82,7 +82,7 @@ public class GraphFragment extends DialogFragment {
         for(int i=minYear; i<=maxYear; i++) {
             if(diff <= 2) {
                 for(int j=0; j<12; j++) {
-                    String key = DateUtils.getMonthString(j) + " " + i;
+                    String key = DateUtils.getMonthString(j) + "\n" + i;
                     crimeFrequencyMap.put(key, 0);
                     crimeFrequencyMapKeyList.add(key);
                     Log.e(key, key);
@@ -96,9 +96,9 @@ public class GraphFragment extends DialogFragment {
         }
 
         for(Crime crime: visibleCrimeList) {
-            String key = "";
+            String key;
             if(diff <= 2) {
-                key = DateUtils.getMonthString(crime.getDateMillis()) + " " + crimeYearMap.get(crime);
+                key = DateUtils.getMonthString(crime.getDateMillis()) + "\n" + crimeYearMap.get(crime);
             } else {
                 key = crimeYearMap.get(crime);
             }
@@ -134,6 +134,7 @@ public class GraphFragment extends DialogFragment {
         int crimeFrequencyMapSize = crimeFrequencyMapKeyList.size();
         for(int i=0; i<crimeFrequencyMapSize; i++) {
             dataPointList.add(new DataPoint(i, crimeFrequencyMap.get(crimeFrequencyMapKeyList.get(i))));
+            Log.e(String.valueOf(i), String.valueOf(crimeFrequencyMap.get(crimeFrequencyMapKeyList.get(i))));
         }
 
         GraphView graph = (GraphView) v.findViewById(R.id.graph);
@@ -155,7 +156,7 @@ public class GraphFragment extends DialogFragment {
             }
         });
 
-        graph.getViewport().setScrollable(true);
+        graph.getViewport().setScalable(true);
     }
 
 }
