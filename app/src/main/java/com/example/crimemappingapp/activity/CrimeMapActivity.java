@@ -107,6 +107,7 @@ public class CrimeMapActivity extends AppCompatActivity implements
 
     private List<CrimeSearch> crimeSearchList = new ArrayList<>();
 
+    private List<Marker> shortestPathMarkers = new ArrayList<>();
     private List<LatLng> shortestPathLatLng = new ArrayList<>();
     private boolean enableShowShortestPath;
     private Polyline currPolyline;
@@ -309,6 +310,10 @@ public class CrimeMapActivity extends AppCompatActivity implements
         } else {
             if(currPolyline != null) {
                 currPolyline.remove();
+                for(Marker marker: shortestPathMarkers) {
+                    marker.remove();
+                }
+                shortestPathMarkers.clear();
             }
             Toast.makeText(this.getApplicationContext(), "Disabled show shortest path mode", Toast.LENGTH_SHORT).show();
         }
@@ -344,6 +349,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
                         .data(latLngList)
                         .build();
 
+                if(mOverlay != null) {
+                    mOverlay.remove();
+                }
                 // Add a tile overlay to the map, using the heat map tile provider.
                 mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
             } else {
@@ -487,17 +495,28 @@ public class CrimeMapActivity extends AppCompatActivity implements
     public void onMapClick(LatLng latLng) {
         if(!enableShowShortestPath) {
             shortestPathLatLng.clear();
+            for(Marker marker: shortestPathMarkers) {
+                marker.remove();
+            }
+            shortestPathMarkers.clear();
             return;
         }
 
         if(currPolyline != null) {
             currPolyline.remove();
+            currPolyline = null;
+            for(Marker marker: shortestPathMarkers) {
+                marker.remove();
+            }
+            shortestPathMarkers.clear();
         }
 
         if(shortestPathLatLng.isEmpty()) {
             shortestPathLatLng.add(latLng);
+            shortestPathMarkers.add(mMap.addMarker(new MarkerOptions().position(latLng)));
         } else {
             shortestPathLatLng.add(latLng);
+            shortestPathMarkers.add(mMap.addMarker(new MarkerOptions().position(latLng)));
 
             // Getting URL to the Google Directions API
             String url = getDirectionsUrl(shortestPathLatLng.get(0), shortestPathLatLng.get(1));
@@ -522,8 +541,11 @@ public class CrimeMapActivity extends AppCompatActivity implements
         // Sensor enabled
         String sensor = "sensor=false";
 
+        // direction mode (driving, walk, etc)
+        String dirflg = "mode=walking";
+
         // Building the parameters to the web service
-        String parameters = str_origin+"&"+str_dest+"&"+sensor;
+        String parameters = str_origin+"&"+str_dest+"&"+sensor+"&"+dirflg;
 
         // Output format
         String output = "json";
@@ -810,6 +832,9 @@ public class CrimeMapActivity extends AppCompatActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.crime_map_menu, menu);
+
+        MenuItem addCrimeMenuItem = menu.findItem(R.id.add_crime_button);
+        addCrimeMenuItem.setVisible(isAdmin);
         return true;
     }
 
